@@ -1,0 +1,68 @@
+:root {
+  /* CSS Variables */
+  --bg-color: #f4f5e2;
+  --text-color: #24160b;
+  --md-char-color: #415427;
+  --meta-content-color: #5b808d;
+
+  --strong-color: #808d72;
+  --em-color: #FF5370;
+  --h-color: #c4a970;
+  --blockquote-color: #777777;
+}
+
+.card {
+  font-family: arial;
+  font-size: 18px;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+}
+
+strong {
+  font-weight: Bold;
+  font-size: 1.1rem;
+  color: var(--strong-color);
+}
+
+/* Quote */
+#header, #comment {
+  font-size: 0.9rem;
+	color: var(--blockquote-color);
+}
+
+/* Question */
+#question {
+  text-align:center;
+}
+
+#question p{
+  font-size: 1rem;
+}
+
+h1, h2, h3,h4 {
+  color: var(--h-color);
+	margin: 5px 10px 10px;
+}
+
+h1{
+  font-size: 2rem;
+}
+
+h2{
+  font-size: 1.4rem;
+}
+
+#example {
+	text-align: justify;
+  font-size: 0.9rem;
+  margin: 0 10px 0;
+}
+
+/* Answer */
+#answer {
+  font-size: 1rem;
+  font-weight: normal;
+	text-align: justify;
+  margin: 0 10px 0;
+}
+
