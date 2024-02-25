@@ -11,12 +11,24 @@ MainTopic
 
 """
 
-import os
 import logging
+import os
+import re
+import sys
 
-# import all the Qt GUI library
-# import the "show info" tool from utils.py
-# from aqt.utils import showInfo
+from anki.decks import DeckId
+
+# import markdown2 from the local libray, cause Anki doesn't include this module
+try:
+    from .Lib import markdown2
+    # TODO markdown2 parser doesn't support latex
+except ImportError as e:
+    logging.warning(f'"markdown2" module not found, exit: {e}')
+    sys.exit()
+
+from bs4 import BeautifulSoup, Comment
+
+from anki.notes import Note
 from anki.models import ModelManager, NotetypeDict, TemplateDict
 from aqt import mw
 
@@ -90,29 +102,179 @@ class TreeJoint(Joint):
         logging.info(f'NoteType <{m["name"]}> added to Anki')
 
     @classmethod
-    def parse_file(cls):
+    def verify(cls, file: str) -> bool:
         """
-        Parse the md file and import its content
+        check if the file appropriate for the model
+        :param file: filepath
+        :rtype: bool
+        :return: appropriate or not
         """
-        # get deck and model
-        # deck_name = 'test'
-        # model_name = 'Interpretation (md)'
-        #
+        # In advance, check if only one h1 exist
 
-        # deck = mw.col.decks.by_name(deck_name)
-        # model = mw.col.models.by_name(model_name)
+        # Then, check h2 amount at least 1
+        # h2_tags = soup.find_all('h2')
+        # h2_count = len(h2_tags)
+        # if not h2_count:
+        #     logging.warning('Cannot find any note(h2 tag), please check your original MD file.')
+        #     # return
+        #     exit(1)
+        # else:
+        #     logging.debug(f'{h2_count} h2-tag(s) found')
 
-        # note = Note(mw.col, model)
-        #
-        # note['MainTopic'] = 'MainTopic'
-        # note['MainTopicBody'] = 'Body'
-        # note['Extra'] = 'Extra'
-        # note.tags.append('TESTtag')
-        #
-        # logging.info(f'adding Note, {note.fields}')
-        # logging.info(f'_fmap, {note._fmap}')
-        # # add note to deck, and the note object will get assigned with id
-        # mw.col.add_note(note, deck['id'])
-        # logging.info(f'note.id: {note.id}')
+        # TODO verify function
+        #   check if note id comment exist
+        #   if subtopics' count more than 6?
+        #   ...
 
         pass
+
+    @classmethod
+    def parse(cls, file: str, deck_name: str) -> list[int]:
+        """
+        Parse the file content, map them on the model,
+        then add/join them to collection.
+        :param deck_name: deck name that generated from file path
+        :type deck_name: str
+        :param file: filepath
+        :rtype: list[int]
+        :return: list of id to the created notes
+        """
+
+        # Inspect your target HTML
+        md_content = cls.read_file(file)
+        content = markdown2.markdown(md_content)
+        soup = BeautifulSoup(content, "html.parser")
+
+        new_note_ids = []
+        h1_content = soup.h1.text + '－'
+
+        h2_tags = soup.find_all('h2')
+        h2_count = len(h2_tags)
+        logging.debug(f'{h2_count} h2-tag(s) found')
+
+        # find if NoteType comment exist
+        comm = soup.find(string=lambda text: isinstance(text, Comment))
+
+        if comm and soup.index(comm) < soup.index(soup.find()):
+            m = re.match(r'\s*NoteType:\s*(?P<notetype>\w+)\s*', comm)
+            if not m:
+                logging.warning(f'Unexpected comment found: <!--{comm}-->')
+            else:
+                # notetype_name = m.group('notetype')
+                # TODO: check if it is the same as this joint, using model ID
+                logging.info(f'NoteType comment found: <!--{comm}-->')
+        else:
+            logging.debug('No comment found at the beginning of the soup: ')
+
+        # Then, find all the sibling tags previous to the first h2 tag (MainTopic field)
+        #   where are supposed to contain the previous note_tag paragraph and extra blockquote that shared between notes
+        tags = []
+        extra = ''
+        for sibling in h2_tags[0].find_previous_siblings():
+            if not sibling:
+                break
+
+            if sibling.name == 'p' \
+                    and re.fullmatch(r'Tags:\s*', sibling.contents[0], flags=re.IGNORECASE):
+                # Parse the tags field
+                for code in sibling.find_all('code', recursive=False):
+                    # note.tags.append(code.text)
+                    tags.append(code.text)
+                logging.debug(f'Tags updated: {tags}')
+
+            elif sibling.name == 'blockquote':
+                # Parse the 'Extra' field (blockquote tag before h1)
+                extra += str(soup.blockquote)
+                logging.debug('Extra field updated: {}'.format(extra.replace('\n', '')[:30]))
+            else:
+                logging.warning(f'Unexpected tag when parsing: {sibling}')
+
+        # Later, parse each h2 tag and its next siblings as its content
+        for h2_index in range(h2_count):
+
+            logging.info(f'h2_tags[{h2_index}] parsing start')
+
+            # look up comment and see if note_id included
+            comm = h2_tags[h2_index].find_next_sibling(string=lambda text: isinstance(text, Comment))
+            if comm and soup.index(comm) < soup.index(h2_tags[h2_index].find_next_sibling()):
+
+                m = re.fullmatch(r'\s*NoteId:\s*(?P<note_id>\w+)\s*', comm, flags=re.IGNORECASE)
+
+                if m:
+                    logging.info(f'NoteId comment found: <!--{comm}-->, note already imported, skip import.')
+                    note_id = m.group('note_id')
+                    new_note_ids.append(note_id)
+                    continue
+                    # TODO get note by id, then compare and update note
+                else:
+                    logging.warning(f'Unexpected comment found: <!--{comm}-->')
+            else:
+                logging.debug(f'No comment found behind the h2 tag: {h2_tags[h2_index]}')
+
+            # Create a note
+            model = mw.col.models.by_name(cls.MODEL_NAME)
+            note = Note(mw.col, model)
+
+            #   Connect h1 and h2 value as MainTopic field
+            h2_tags[h2_index].string.insert_before(h1_content)
+
+            topic_field = 'MainTopic'
+            body_field = 'MainTopicBody'
+            note[topic_field] = str(h2_tags[h2_index])
+            note[body_field] = ''
+
+            logging.debug(f'{topic_field} added: {note[topic_field]}')
+
+            # find all the sibling tags next to h1 tag (MainTopic field)
+            h3_index = 0
+            for sibling in h2_tags[h2_index].find_next_siblings():
+
+                if sibling.name == 'h3':
+                    h3_index += 1
+
+                    topic_field = f'Subtopic_{h3_index}'
+                    body_field = f'SubtopicBody_{h3_index}'
+
+                    note[topic_field] = str(sibling)
+                    note[body_field] = ''
+
+                    logging.debug(f'{topic_field} added: {note[topic_field]}')
+
+                elif sibling.name == 'blockquote':
+                    # 'blockquote' tag belongs to 'topicHint' field when after heading
+                    # for now, skip this tag
+                    logging.debug('Hint field skipped: {}'.format(str(sibling).replace('\n', '')[:30]))
+
+                elif sibling.name in ['h1', 'hr']:
+                    # which means we get to the end of the note
+                    logging.debug('reach the end of this note')
+                    break
+
+                else:
+                    note[body_field] += str(sibling)
+                    logging.debug('{field} updated: {content}'.format(
+                        field=body_field, content=note[body_field].replace('\n', '')[:30]
+                    ))
+
+            logging.info(f'h2_tags[{h2_index}] parsing finish')
+
+            # get deck and model
+            deck_id: DeckId = mw.col.decks.id(deck_name)  # Find or Create if not exist
+            logging.info(f'TEMP| deck_id: {deck_id}')
+            note['Extra'] = extra
+            logging.debug('Extra field added: {}'.format(note['Extra'][:30]))
+            note.tags = tags
+            logging.debug('Tags added: {}'.format(note.tags))
+
+            # add note to deck, and the note object will get assigned with id
+            mw.col.add_note(note, deck_id)
+            logging.info(f'Note added, note.id: {note.id}')
+            # todo make the note imported un-editable,
+            #  but able to open the associated md file and update note after close the file.
+
+            # TODO!!! Markup the deck is connected to my knowledge-base and note is associated with knowledge base
+            new_note_ids.append(note.id)
+
+        # todo using message show parse result
+
+        return new_note_ids
