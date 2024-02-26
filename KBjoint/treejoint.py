@@ -102,10 +102,10 @@ class TreeJoint(Joint):
         logging.info(f'NoteType <{m["name"]}> added to Anki')
 
     @classmethod
-    def verify(cls, file: str) -> bool:
+    def verify(cls, filepath: str) -> bool:
         """
         check if the file appropriate for the model
-        :param file: filepath
+        :param filepath: filepath
         :rtype: bool
         :return: appropriate or not
         """
@@ -129,19 +129,19 @@ class TreeJoint(Joint):
         pass
 
     @classmethod
-    def parse(cls, file: str, deck_name: str) -> list[int]:
+    def parse(cls, filepath: str, deck_name: str) -> list[int]:
         """
         Parse the file content, map them on the model,
         then add/join them to collection.
         :param deck_name: deck name that generated from file path
         :type deck_name: str
-        :param file: filepath
+        :param filepath: filepath
         :rtype: list[int]
         :return: list of id to the created notes
         """
 
         # Inspect your target HTML
-        md_content = cls.read_file(file)
+        md_content = cls.read_file(filepath)
         content = markdown2.markdown(md_content)
         soup = BeautifulSoup(content, "html.parser")
 
@@ -154,7 +154,6 @@ class TreeJoint(Joint):
 
         # find if NoteType comment exist
         comm = soup.find(string=lambda text: isinstance(text, Comment))
-
         if comm and soup.index(comm) < soup.index(soup.find()):
             m = re.match(r'\s*NoteType:\s*(?P<notetype>\w+)\s*', comm)
             if not m:
@@ -164,7 +163,11 @@ class TreeJoint(Joint):
                 # TODO: check if it is the same as this joint, using model ID
                 logging.info(f'NoteType comment found: <!--{comm}-->')
         else:
-            logging.debug('No comment found at the beginning of the soup: ')
+            # there must be two '\n' at the end of the pattern,
+            #  or the comment will be parsed as part of next element,
+            #  and soup.index(comm) will report: 'element not in tag'
+            md_content = re.sub('^', f'\n<!-- NoteType: {cls.MODEL_NAME} -->\n\n', md_content)
+            logging.debug('No comment found at the beginning of the soup, NoteType commented ')
 
         # Then, find all the sibling tags previous to the first h2 tag (MainTopic field)
         #   where are supposed to contain the previous note_tag paragraph and extra blockquote that shared between notes
@@ -212,10 +215,11 @@ class TreeJoint(Joint):
                 logging.debug(f'No comment found behind the h2 tag: {h2_tags[h2_index]}')
 
             # Create a note
-            model = mw.col.models.by_name(cls.MODEL_NAME)
-            note = Note(mw.col, model)
+            note = Note(mw.col, mw.col.models.by_name(cls.MODEL_NAME))
 
-            #   Connect h1 and h2 value as MainTopic field
+            # Pass h2 text for note_id comment
+            h2_txt = h2_tags[h2_index].text
+            # Connect h1 and h2 value as MainTopic field
             h2_tags[h2_index].string.insert_before(h1_content)
 
             topic_field = 'MainTopic'
@@ -245,7 +249,7 @@ class TreeJoint(Joint):
                     # for now, skip this tag
                     logging.debug('Hint field skipped: {}'.format(str(sibling).replace('\n', '')[:30]))
 
-                elif sibling.name in ['h1', 'hr']:
+                elif sibling.name in ['h2', 'hr']:
                     # which means we get to the end of the note
                     logging.debug('reach the end of this note')
                     break
@@ -272,9 +276,16 @@ class TreeJoint(Joint):
             # todo make the note imported un-editable,
             #  but able to open the associated md file and update note after close the file.
 
-            # TODO!!! Markup the deck is connected to my knowledge-base and note is associated with knowledge base
+            md_content = re.sub(
+                # there must be two '\n' at the end of the pattern,
+                #  or the comment will be parsed as part of next element
+                r'(\n##\s*{}\s*\n\n)'.format(h2_txt),
+                r'\1' + f'\n<!-- NoteId: {note.id} -->\n',
+                md_content)
+            logging.debug(f'Note-id commented after h2 "{h2_txt}"')
+
             new_note_ids.append(note.id)
 
-        # todo using message show parse result
+        cls.write_file(md_content, filepath)
 
         return new_note_ids

@@ -25,45 +25,65 @@ class Joint:
         pass
 
     @classmethod
-    def parse(cls, file: str) -> list[int]:
-        """
-        Parse the file content, map them on the model,
-        then add/join them to collection.
-        :param file: filepath
-        :rtype: list[int]
-        :return: list of id to the created notes
-        """
-        pass
-
-    @classmethod
-    def verify(cls, file: str) -> bool:
+    def verify(cls, filepath: str) -> bool:
         """
         check if the file appropriate for the model
-        :param file: filepath
+        :param filepath: filepath
         :rtype: bool
         :return: appropriate or not
         """
         pass
 
-    @staticmethod
-    def read_file(file: str) -> str:
+    @classmethod
+    def parse(cls, filepath: str, deck_name: str) -> list[int]:
         """
-        Open the file path and read the file content
-        :param file: filepath
-        :return: file content
+        Parse the file content, map them on the model,
+        then add/join them to collection.
+        :param deck_name: deck name that generated from file path
+        :type deck_name: str
+        :param filepath: filepath
+        :rtype: list[int]
+        :return: list of id to the created notes
+        """
+        pass
+
+    @staticmethod
+    def read_file(filepath: str) -> str:
+        """
+        Open the file and read the file content.
+
+        :param filepath: The path of the file to read from.
+        :return: The content of the file.
         """
 
         try:
             # Attempt to open the file
-            with open(file, 'r', encoding='utf-8') as file:
+            with open(filepath, 'r', encoding='utf-8') as filepath:
                 # Read the entire content of the file
-                file_content = file.read()
-                logging.debug(f"File <{file}> read successfully.")
+                file_content = filepath.read()
+                logging.debug(f"File <{filepath}> read successfully: {file_content[:20]}")
                 return file_content
 
         except FileNotFoundError:
-            logging.error(f"File <{file}> not found. Please make sure the file exists.")
+            logging.error(f"File <{filepath}> not found. Please make sure the file exists.")
         except IOError as e:
             logging.error("An error occurred while reading the file:", e)
 
         return ''
+
+    @staticmethod
+    def write_file(content: str, filepath: str):
+        """
+        Write content to a file.
+        
+        :param content: The content to write to the file.
+        :type content: str
+        :param filepath: The path of the file to write to.
+        :type filepath: str
+        """
+        try:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(content)
+            print(f"Success writing to {filepath}.")
+        except Exception as e:
+            print(f"Error writing to {filepath}: {e}")
