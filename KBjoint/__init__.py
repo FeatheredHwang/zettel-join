@@ -2,28 +2,13 @@ import os
 import logging
 
 from aqt import mw
-from aqt.qt import *
+# from aqt.qt import *
+from aqt.qt import QFileDialog, QAction, qconnect
+# from aqt.utils import showInfo, askUser
+from aqt.utils import showInfo
 from anki.hooks import addHook
 
-# TODO rename the project to KBjoint
-
-# TODO markdown2 parser doesn't support latex
-
-# TODO Write a markdown2 extension:
-#  markdown2 parser transfer two blank lines (in markdown file) into a blank line (in html file)
-
-# TODO Markup the deck is connected to my knowledge-base and note is associated with knowledge base
-
-# TODO make the note imported un-editable, but able to open the associated md file and update note after close the
-#  file.
-
-# TODO: Popup a process bar to show the process
-# and stop user doing anything else before importation done.
-# mw.progress.start(max=1, parent=mw)
-# Processing...
-# mw.progress.update()
-# mw.progress.finish()
-
+from .treejoint import TreeJoint
 
 # Logging set up
 ##################################################
@@ -43,11 +28,6 @@ print(f'logger file path: {log_file_path}')
 
 # import modules after logging setup
 ##################################################
-try:
-    from .treejoint import TreeJoint
-except ImportError:
-    logging.info("joint module doesn't exist.")
-
 # import test module if exist
 try:
     from .test import *
@@ -62,6 +42,8 @@ def build_models():
     TreeJoint.build_model()
     # If there are other type of joint/model, put them here
 
+
+# TODO learn more about hook, how many kinds of hook exist
 addHook("profileLoaded", build_models)
 
 
@@ -98,8 +80,24 @@ def _kb_join() -> None:
 
     # Get the top-level directory to traverse
     top_directory = QFileDialog.getExistingDirectory(mw, 'Open', directory=os.path.expanduser("~"))
-    # TODO check if KB-folder or not
-    logging.info(f'the knowledge base root directory you chosen: {top_directory}')
+    # todo!!! open the last-opened directory
+    # TODO check if KB-folder or not, what if we open a sub-directory of the top-directory
+    # if not askUser("blahblah"):
+    #     pass
+    #     return
+    # else:
+    #     pass
+    logging.info(f'chosen root directory of your knowledge base : {top_directory}')
+
+    # TODO leave the file traverse job to joint
+    #   and include joint's file analyse - if suitable for this model/joint
+
+    # todo: Popup a process bar to show the process
+    # and stop user doing anything else before importation done.
+    # mw.progress.start(max=1, parent=mw)
+    # Processing...
+    # mw.progress.update()
+    # mw.progress.finish()
 
     # Traverse the directory tree using os.walk()
     for root, dirs, files in os.walk(top_directory):
@@ -111,17 +109,19 @@ def _kb_join() -> None:
         # Calculate the relative path of the current directory
         relative_root = os.path.relpath(root, top_directory)
 
+        # replace os.sep with '::' as deck's name
+        deck_name = relative_root.replace(os.sep, '::')
+        logging.debug(f'Create deck name using relative directory path: `{deck_name}`')
+
         for file in files:
-            # TODO import joint's file analyse - if suitable for me
             # judge if a file is a Markdown (.md) file
             if file.endswith('.md'):
-                # Calculate the relative path of each file
-                relative_file_path = os.path.join(relative_root, file)
-                # replace os.sep with '::' as deck's name
-                deck_name = relative_root.replace(os.sep, '::')
-                logging.debug(f'Found a md file: <{file}> with deck name <{deck_name}>')
-                # TODO parse the file with TopicTree
+                logging.debug(f'Inside the directory a md file found: `{file}`')
+                TreeJoint.parse(str(os.path.join(root, file)), str(deck_name))
+
+    # todo using message show parse result
+    showInfo('Import succeed. __How Many__')
 
     # With notes added, refresh the deck browser
     mw.deckBrowser.refresh()
-    # TODO refresh the notesBrowser window
+    # todo refresh the notesBrowser window, show the last added notes
