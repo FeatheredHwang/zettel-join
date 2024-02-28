@@ -1,12 +1,15 @@
-import os
+import json
 import logging
+import os
+from typing import Any
 
+from anki.hooks import addHook
+from aqt import gui_hooks
 from aqt import mw
 # from aqt.qt import *
 from aqt.qt import QFileDialog, QAction, qconnect
 # from aqt.utils import showInfo, askUser
 from aqt.utils import showInfo
-from anki.hooks import addHook
 
 from .treejoint import TreeJoint
 
@@ -26,9 +29,47 @@ logging.basicConfig(level=logging.DEBUG,
 logging.info(f'logger file path: {log_file_path}')
 print(f'logger file path: {log_file_path}')
 
-# import modules after logging setup
+# Config set up
 ##################################################
-# import test module if exist
+# legacy type
+ConfigDict = dict[str, Any]
+
+# Path to the configuration file
+CONFIG_JSON_FILE: str = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    f'config@{mw.pm.name.replace(" ", "-")}.json'
+)
+
+config: ConfigDict = {}
+
+
+def load_json_config():
+    """
+    Load previous config from json file
+    """
+    if os.path.exists(CONFIG_JSON_FILE):
+        with open(CONFIG_JSON_FILE) as f:
+            global config
+            config = json.load(f)
+        logging.info(f'Config File Found: {os.path.basename(CONFIG_JSON_FILE)}\n'
+                     f'The earlier configs: \n{json.dumps(config)}')
+    # logging.info(f'Config File Not Found: {CONFIG_FILEPATH}')
+
+
+def save_json_config():
+    """
+    Write present config to json file
+    """
+    global config
+    with open(CONFIG_JSON_FILE, 'w') as f:
+        f.write(json.dumps(config, indent=4))
+
+
+gui_hooks.profile_did_open.append(load_json_config)
+gui_hooks.profile_will_close.append(save_json_config)
+
+# import test modules if exist
+##################################################
 try:
     from .test import *
 except ImportError:
@@ -40,6 +81,10 @@ except ImportError:
 
 def build_models():
     TreeJoint.build_model()
+    logging.info(os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        f'settings@{mw.pm.name.replace(" ", "-")}.json'
+    ))
     # If there are other type of joint/model, put them here
 
 
@@ -67,6 +112,10 @@ qconnect(action.triggered, kb_join)
 mw.form.menuTools.addAction(action)
 
 
+# KB join function
+##################################################
+
+
 def _kb_join() -> None:
     """
     Join your knowledge base to Anki
@@ -78,9 +127,16 @@ def _kb_join() -> None:
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     logging.info(f'Current working directory is: {os.getcwd()}')
 
-    # Get the top-level directory to traverse
-    top_directory = QFileDialog.getExistingDirectory(mw, 'Open', directory=os.path.expanduser("~"))
-    # todo!!! open the last-opened directory
+    # Get KB directory to traverse
+    init_dir = config['last_top_dir'] if config['last_top_dir'] else os.path.expanduser("~")
+    # noinspection PyTypeChecker
+    top_directory = QFileDialog.getExistingDirectory(
+        mw,
+        'Open the Knowledge Base Directory',  # todo cannot understand this calling
+        directory=init_dir
+    )
+    config['last_top_dir'] = top_directory
+
     # TODO check if KB-folder or not, what if we open a sub-directory of the top-directory
     # if not askUser("blahblah"):
     #     pass
