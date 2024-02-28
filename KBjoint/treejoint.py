@@ -31,15 +31,22 @@ from bs4 import BeautifulSoup, Comment
 from anki.notes import Note
 from anki.models import ModelManager, NotetypeDict, TemplateDict
 from aqt import mw
+from aqt import gui_hooks
 
 from .joint import Joint
+
+
+class TreeJoint(Joint):
+    pass
+
+
+gui_hooks.profile_did_open.append(TreeJoint.build_model)
 
 
 class TreeJoint(Joint):
     """
     A joint to import md files to TopicTree model.
     """
-    pass
 
     MODEL_NAME = 'TopicTree'
     SUBTOPIC_AMOUNT: int = 6
@@ -146,7 +153,7 @@ class TreeJoint(Joint):
         soup = BeautifulSoup(content, "html.parser")
 
         new_note_ids = []
-        h1_content = soup.h1.text + '－'
+        h1_prefix = soup.h1.text + '－'
 
         h2_tags = soup.find_all('h2')
         h2_count = len(h2_tags)
@@ -169,16 +176,15 @@ class TreeJoint(Joint):
             md_content = re.sub('^', f'\n<!-- NoteType: {cls.MODEL_NAME} -->\n\n', md_content)
             logging.debug('No comment found at the beginning of the soup, NoteType commented ')
 
-        # Then, find all the sibling tags previous to the first h2 tag (MainTopic field)
+        # Then, find all the sibling tags after h1 tag and previous to the first h2 tag (MainTopic field)
         #   where are supposed to contain the previous note_tag paragraph and extra blockquote that shared between notes
         tags = []
         extra = ''
-        for sibling in h2_tags[0].find_previous_siblings():
-            if not sibling:
+        for sibling in soup.h1.find_next_siblings():
+            if not sibling or sibling.name == 'h2':
                 break
 
-            if sibling.name == 'p' \
-                    and re.fullmatch(r'Tags:\s*', sibling.contents[0], flags=re.IGNORECASE):
+            if sibling.name == 'p' and sibling.code:
                 # Parse the tags field
                 for code in sibling.find_all('code', recursive=False):
                     # note.tags.append(code.text)
@@ -189,6 +195,7 @@ class TreeJoint(Joint):
                 # Parse the 'Extra' field (blockquote tag before h1)
                 extra += str(soup.blockquote)
                 logging.debug('Extra field updated: {}'.format(extra.replace('\n', '')[:30]))
+
             else:
                 logging.warning(f'Unexpected tag when parsing: {sibling}')
 
@@ -220,7 +227,7 @@ class TreeJoint(Joint):
             # Pass h2 text for note_id comment
             h2_txt = h2_tags[h2_index].text
             # Connect h1 and h2 value as MainTopic field
-            h2_tags[h2_index].string.insert_before(h1_content)
+            h2_tags[h2_index].string.insert_before(h1_prefix)
 
             topic_field = 'MainTopic'
             body_field = 'MainTopicBody'
@@ -264,7 +271,6 @@ class TreeJoint(Joint):
 
             # get deck and model
             deck_id: DeckId = mw.col.decks.id(deck_name)  # Find or Create if not exist
-            logging.info(f'TEMP| deck_id: {deck_id}')
             note['Extra'] = extra
             logging.debug('Extra field added: {}'.format(note['Extra'][:30]))
             note.tags = tags
@@ -280,7 +286,7 @@ class TreeJoint(Joint):
                 # there must be two '\n' at the end of the pattern,
                 #  or the comment will be parsed as part of next element
                 r'(\n##\s*{}\s*\n\n)'.format(h2_txt),
-                r'\1' + f'\n<!-- NoteId: {note.id} -->\n',
+                r'\1' + f'\n<!-- NoteId: {note.id} -->\n\n',
                 md_content)
             logging.debug(f'Note-id commented after h2 "{h2_txt}"')
 
