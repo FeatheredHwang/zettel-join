@@ -31,16 +31,8 @@ from bs4 import BeautifulSoup, Comment
 from anki.notes import Note
 from anki.models import ModelManager, NotetypeDict, TemplateDict
 from aqt import mw
-from aqt import gui_hooks
 
 from .joint import Joint
-
-
-class TreeJoint(Joint):
-    pass
-
-
-gui_hooks.profile_did_open.append(TreeJoint.build_model)
 
 
 class TreeJoint(Joint):
@@ -63,6 +55,7 @@ class TreeJoint(Joint):
         mm: ModelManager = mw.col.models
         t: TemplateDict
 
+        # verify if model exists. If not, build model
         m: NotetypeDict = mw.col.models.byName(cls.MODEL_NAME)
         if m:
             # TODO How to update the model? Using version to keep user's custom changes
@@ -78,7 +71,7 @@ class TreeJoint(Joint):
         logging.debug(f'Current working directory is: {os.getcwd()}')
 
         # Add MainTopic fields and Card
-        for fld in ['MainTopic', 'MainTopicBody', 'Extra']:
+        for fld in ['MainTopic', 'MainTopicBody', 'MainTopicHint', 'Extra']:
             mm.addField(m, mm.newField(fld))
         t = mm.newTemplate('MainTopic')
         t['qfmt'] = cls.read_file('templates/main-front.html')
@@ -92,7 +85,7 @@ class TreeJoint(Joint):
         for n in range(cls.SUBTOPIC_AMOUNT):
 
             n = n + 1  # range(n) returns a num list [0,1,...,n-1]
-            for fld in ['Subtopic_{}', 'SubtopicBody_{}']:
+            for fld in ['Subtopic_{}', 'SubtopicBody_{}', 'SubtopicHint_{}']:
                 mm.addField(m, mm.newField(fld.format(n)))
 
             t = mm.new_template(f'Subtopic {n}')
@@ -131,24 +124,28 @@ class TreeJoint(Joint):
         # TODO verify function
         #   check if note id comment exist
         #   if subtopics' count more than 6?
+        #   how to check what kind of notetype this note should use?
         #   ...
 
         pass
 
     @classmethod
-    def parse(cls, filepath: str, deck_name: str) -> list[int]:
+    def parse(cls, file: str, deck_name: str) -> list[int]:
         """
         Parse the file content, map them on the model,
         then add/join them to collection.
         :param deck_name: deck name that generated from file path
         :type deck_name: str
-        :param filepath: filepath
+        :param file: absolute filepath
         :rtype: list[int]
         :return: list of id to the created notes
         """
+        # TODO verify if md file...
+
+        cls.build_model()
 
         # Inspect your target HTML
-        md_content = cls.read_file(filepath)
+        md_content = cls.read_file(file)
         content = markdown2.markdown(md_content)
         soup = BeautifulSoup(content, "html.parser")
 
@@ -178,7 +175,11 @@ class TreeJoint(Joint):
 
         # Then, find all the sibling tags after h1 tag and previous to the first h2 tag (MainTopic field)
         #   where are supposed to contain the previous note_tag paragraph and extra blockquote that shared between notes
-        tags = []
+        tags: list[str] = []
+        # mark the note if the filename start with ⭐ emoji
+        if re.match('^⭐.*', os.path.basename(file)):
+            tags.append('marked')
+
         extra = ''
         for sibling in soup.h1.find_next_siblings():
             if not sibling or sibling.name == 'h2':
@@ -231,6 +232,7 @@ class TreeJoint(Joint):
 
             topic_field = 'MainTopic'
             body_field = 'MainTopicBody'
+            hint_field = 'MainTopicHint'
             note[topic_field] = str(h2_tags[h2_index])
             note[body_field] = ''
 
@@ -245,15 +247,17 @@ class TreeJoint(Joint):
 
                     topic_field = f'Subtopic_{h3_index}'
                     body_field = f'SubtopicBody_{h3_index}'
+                    hint_field = f'SubtopicHint_{h3_index}'
 
                     note[topic_field] = str(sibling)
                     note[body_field] = ''
+                    note[hint_field] = ''
 
                     logging.debug(f'{topic_field} added: {note[topic_field]}')
 
                 elif sibling.name == 'blockquote':
                     # 'blockquote' tag belongs to 'topicHint' field when after heading
-                    # for now, skip this tag
+                    note[hint_field] += str(sibling)
                     logging.debug('Hint field skipped: {}'.format(str(sibling).replace('\n', '')[:30]))
 
                 elif sibling.name in ['h2', 'hr']:
@@ -292,6 +296,6 @@ class TreeJoint(Joint):
 
             new_note_ids.append(note.id)
 
-        cls.write_file(md_content, filepath)
+        cls.write_file(md_content, file)
 
         return new_note_ids

@@ -58,9 +58,9 @@ class Joint:
 
         try:
             # Attempt to open the file
-            with open(filepath, 'r', encoding='utf-8') as filepath:
+            with open(filepath, 'r', encoding='utf-8') as f:
                 # Read the entire content of the file
-                file_content = filepath.read()
+                file_content = f.read()
                 logging.debug(f"File <{filepath}> read successfully: {file_content[:20]}")
                 return file_content
 

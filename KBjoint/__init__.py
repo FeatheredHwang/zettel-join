@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import Any
+from typing import Any, Union
 
 from aqt import gui_hooks
 from aqt import mw
@@ -67,7 +67,6 @@ def save_json_config():
 gui_hooks.profile_did_open.append(load_json_config)
 gui_hooks.profile_will_close.append(save_json_config)
 
-
 # import test modules if exist
 ##################################################
 try:
@@ -75,19 +74,10 @@ try:
 except ImportError:
     logging.info("test module doesn't exist.")
 
-
-# add hook to crete note
-##################################################
-
-def build_models():
-    TreeJoint.build_model()
-    # If there are other type of joint/model, put them here
+# gui_hooks.profile_did_open.append(TreeJoint.build_model)
 
 
-gui_hooks.profile_did_open.append(build_models)
-
-
-# Add menu item
+# Add 'KB Join' menu item
 ##################################################
 
 def kb_join():
@@ -146,17 +136,21 @@ def _kb_join():
 
         # replace os.sep with '::' as deck's name
         deck_name = relative_root.replace(os.sep, '::')
+        # TODO only take two levels of the dir path
         logging.debug(f'Create deck name using relative directory path: `{deck_name}`')
 
         for file in files:
+            # if a file is marked, mark the notes too.
+            if file.startswith('⭐'):
+                logging.info('important notes found')
             # judge if a file is a Markdown (.md) file
             if file.endswith('.md'):
                 logging.debug(f'Inside the directory a md file found: `{file}`')
                 TreeJoint.parse(str(os.path.join(root, file)), str(deck_name))
 
-    logging.warning('__How Many__ notes imported.\n'
-                    '================================================================')
     # todo using message show parse result
+    logging.info('__How Many__ notes imported.\n'
+                 '================================================================')
     showInfo('__How Many__ notes imported')
 
     # With notes added, refresh the deck browser
@@ -164,7 +158,10 @@ def _kb_join():
     # todo open the notesBrowser window, show the last added notes
 
 
-def open_kb_dir() -> str | None:
+# The | symbol for type hinting is introduced in Python 3.10 and later versions.
+# For now, Anki uses Python 3.9
+# def open_kb_dir() -> str | None:
+def open_kb_dir() -> Union[str, None]:
     """
     Get KB directory to traverse
     :return: The directory path of chosen
@@ -183,19 +180,20 @@ def open_kb_dir() -> str | None:
     # check if user cancelled selection
     if not top_directory:
         logging.info('Opening KB directory cancelled.')
-        return None
+        return
 
     # save config
     config['last_top_dir'] = top_directory
 
     # check if KB-folder or not, in case we open a sub of the top-directory
     if not os.path.exists(os.path.join(top_directory, 'ROOT')):
-        if askUser("The directory you choose do not contain KB 'ROOT' file inside.\n"
+        logging.info("The directory does not contain KB 'ROOT' file inside. Need to choose again.")
+        if askUser("The directory you choose does not contain KB 'ROOT' file inside.\n"
                    "Choose again? "):
             open_kb_dir()
         else:
             logging.info('Opening KB directory cancelled.')
-            return None
+            return
 
-    logging.info(f'Chosen root directory of your knowledge base : {top_directory}')
+    logging.info(f'Chosen knowledge base directory : {top_directory}')
     return top_directory
