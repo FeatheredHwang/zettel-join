@@ -1,7 +1,8 @@
 :root {
   /* CSS Variables */
   --bg-color: #f4f5e2;
-  --text-color: #24160b;
+  /* --text-color: #24160b; */
+  --text-color: white;
   --md-char-color: #415427;
   --meta-content-color: #5b808d;
 
@@ -20,28 +21,36 @@
 
 strong {
   font-weight: Bold;
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   color: var(--strong-color);
 }
 
-/* Quote */
-#header, #comment {
+/* hint */
+#header {
   font-size: 0.9rem;
-	color: var(--blockquote-color);
+  color: var(--blockquote-color);
+  margin: 10px 20px 0;
+}
+
+#header * {
+  color: var(--blockquote-color);
+  font-weight: normal;
+  font-size: 1rem;
+  margin:0;
 }
 
 /* Question */
 #question {
-  text-align:center;
+  text-align: center;
 }
 
 #question p{
   font-size: 1rem;
 }
 
-h1, h2, h3,h4 {
+h1, h2, h3, h4 {
   color: var(--h-color);
-	margin: 5px 10px 10px;
+  margin: 5px 10px 10px;
 }
 
 h1{
@@ -52,8 +61,8 @@ h2{
   font-size: 1.4rem;
 }
 
-#example {
-	text-align: justify;
+#hint blockquote {
+  text-align: justify;
   font-size: 0.9rem;
   margin: 0 10px 0;
 }
@@ -62,7 +71,7 @@ h2{
 #answer {
   font-size: 1rem;
   font-weight: normal;
-	text-align: justify;
+  text-align: justify;
   margin: 0 10px 0;
 }
 
