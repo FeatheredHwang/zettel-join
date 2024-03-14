@@ -8,5 +8,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="@reference" />
     <orderEntry type="module" module-name="@startup" />
+    <orderEntry type="module" module-name="📌reference" />
   </component>
 </module>
