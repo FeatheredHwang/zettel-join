@@ -74,7 +74,7 @@ try:
 except ImportError:
     logging.info("test module doesn't exist.")
 
-# gui_hooks.profile_did_open.append(TreeJoint.build_model)
+gui_hooks.profile_did_open.append(TreeJoint.build_model)
 
 
 # Add 'KB Join' menu item
@@ -114,15 +114,17 @@ def _kb_join():
                         '================================================================')
         return
 
-    # TODO leave the file traverse job to joint
-    #   and include joint's file analyse - if suitable for this model/joint
+    # TODO using GitPython to monitor changes and record each file's notetype
 
     # todo: Popup a process bar to show the process
-    # and stop user doing anything else before importation done.
+    #   and stop user doing anything else before importation done.
     # mw.progress.start(max=1, parent=mw)
-    # Processing...
+    # # Processing...
     # mw.progress.update()
     # mw.progress.finish()
+
+    # TODO leave the file traverse job to joint
+    #   and include joint's file analyse - if suitable for this model/joint
 
     # Traverse the directory tree using os.walk()
     for root, dirs, files in os.walk(top_dir):
@@ -137,6 +139,7 @@ def _kb_join():
         # replace os.sep with '::' as deck's name
         deck_name = relative_root.replace(os.sep, '::')
         # TODO only take two levels of the dir path
+        # todo 'part' for the third level of dir path
         logging.debug(f'Create deck name using relative directory path: `{deck_name}`')
 
         for file in files:

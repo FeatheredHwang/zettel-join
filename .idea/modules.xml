@@ -4,7 +4,8 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../@reference/.idea/@reference.iml" filepath="$PROJECT_DIR$/../@reference/.idea/@reference.iml" />
       <module fileurl="file://$PROJECT_DIR$/../@startup/.idea/@startup.iml" filepath="$PROJECT_DIR$/../@startup/.idea/@startup.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/md2anki.iml" filepath="$PROJECT_DIR$/.idea/md2anki.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/KBjoint.iml" filepath="$PROJECT_DIR$/.idea/KBjoint.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../📌reference/.idea/📌reference.iml" filepath="$PROJECT_DIR$/../📌reference/.idea/📌reference.iml" />
     </modules>
   </component>
 </project>
