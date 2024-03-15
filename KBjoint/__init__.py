@@ -127,6 +127,9 @@ def _kb_join():
     # TODO leave the file traverse job to joint
     #   and include joint's file analyse - if suitable for this model/joint
 
+    # Calculate how many cards imported
+    new_notes_count = 0
+
     # Traverse the directory tree using os.walk()
     for root, dirs, files in os.walk(top_dir):
 
@@ -150,12 +153,12 @@ def _kb_join():
             # judge if a file is a Markdown (.md) file
             if file.endswith('.md'):
                 logging.debug(f'Inside the directory a md file found: `{file}`')
-                TreeJoint.parse(str(os.path.join(root, file)), str(deck_name))
+                new_notes_count += len(TreeJoint.parse(str(os.path.join(root, file)), str(deck_name)))
 
     # todo using message show parse result
-    logging.info('__How Many__ notes imported.\n'
+    logging.info(f'{new_notes_count} notes imported.\n'
                  '================================================================')
-    showInfo('__How Many__ notes imported')
+    showInfo(f'{new_notes_count} notes imported')
 
     # With notes added, refresh the deck browser
     mw.deckBrowser.refresh()

@@ -102,23 +102,23 @@ class TreeJoint(Joint):
     @classmethod
     def parse(cls, file: str, deck_name: str) -> list[int]:
         """
-        Parse the file content, map them on the model,
+        Parse the file content, map them to the model,
         then add/join them to collection.
         :param deck_name: deck name that generated from file path
         :param file: absolute filepath
-        :return: list of id to the created notes
+        :return: list of created note_id
         """
-        # TODO verify the file...
-
-        cls.build_model()
 
         # Get bs4 soup based on md file
         md_content = cls.read_file(file)
         content = markdown2.markdown(md_content)
         soup = BeautifulSoup(content, "html.parser")
 
-        head_levels: list[str] = ['h1', 'h2', 'h3']
+        # the list of created note_id
+        new_note_ids = []
 
+        # Traverse every heading and create model for it
+        head_levels: list[str] = ['h1', 'h2', 'h3']
         for head_level in head_levels:
             for head in soup.find_all(head_level):
                 logging.debug(head)
@@ -158,4 +158,7 @@ class TreeJoint(Joint):
                 deck_id: DeckId = mw.col.decks.id(deck_name)  # Find or Create if not exist
                 # add note to deck, and the note object will get assigned with id
                 mw.col.add_note(note, deck_id)
+                new_note_ids.append(note.id)
                 logging.info(f'Note added, note.id: {note.id}')
+
+        return new_note_ids
