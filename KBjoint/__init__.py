@@ -74,6 +74,7 @@ try:
 except ImportError:
     logging.info("test module doesn't exist.")
 
+# for test convenience, add the model while profile opened
 gui_hooks.profile_did_open.append(TreeJoint.build_model)
 
 
