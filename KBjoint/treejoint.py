@@ -164,19 +164,18 @@ class TreeJoint(Joint):
                 cloze_tags += cloze_soup.select('li > p') if not cloze_tags else []
                 cloze_tags += cloze_soup.select('li') if not cloze_tags else []
 
-                # todo if cloze_tags is empty, empty cards!
+                # Skip zero-cloze note
+                if not cloze_tags:
+                    continue
 
                 # cloze deletion - replace all cloze
                 cloze_count = 0
-                logging.debug('cloze_tags: ' + str(cloze_tags))
                 for cloze_tag in cloze_tags:
                     cloze_count += 1
                     p = '({})'.format(cloze_tag.string)
-                    logging.debug('pattern: ' + p)
                     r = r'{{c%d::\1}}' % cloze_count
-                    logging.debug('repl: ' + r)
                     note['Text'] = re.sub(p, r, note['Text'])
-                    logging.debug('Text field: ' + note['Text'])
+                    # logging.debug('Text field after cloze-deletion: ' + note['Text'])
 
                 # get deck and model
                 deck_id: DeckId = mw.col.decks.id(deck_name)  # Find or Create if not exist
@@ -188,3 +187,6 @@ class TreeJoint(Joint):
         return new_note_ids
 
 # TODO Archive Anki Deck
+# TODO add comment for new note
+# TODO marked tag
+# todo pure list didn't have strong effect
