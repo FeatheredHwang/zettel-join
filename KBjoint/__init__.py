@@ -107,13 +107,12 @@ def _kb_join():
     :return: None
     """
 
-    logging.info('================================\n'
-                 'Trying to open KB dir.')
     top_dir = open_kb_dir()
     if not top_dir:
-        logging.warning('Opening KB dir cancelled, no cards imported.\n'
-                        '================================================================')
+        logging.warning('Opening KB dir: empty dir path, no cards imported.\n')
         return
+    else:
+        logging.info(f'\nThe KB located at {top_dir}')
 
     # TODO using GitPython to monitor changes and record each file's notetype
 
@@ -186,7 +185,7 @@ def open_kb_dir() -> Union[str, None]:
 
     # check if user cancelled selection
     if not top_directory:
-        logging.info('Opening KB directory cancelled.')
+        logging.info('Opening KB dir: cancelled')
         return
 
     # save config
@@ -194,13 +193,13 @@ def open_kb_dir() -> Union[str, None]:
 
     # check if KB-folder or not, in case we open a sub of the top-directory
     if not os.path.exists(os.path.join(top_directory, 'ROOT')):
-        logging.info("The directory does not contain KB 'ROOT' file inside. Need to choose again.")
+        logging.info("Opening KB dir: dir not valid - 'ROOT' file missing, ask user for choose-again")
         if askUser("The directory you choose does not contain KB 'ROOT' file inside.\n"
                    "Choose again? "):
-            open_kb_dir()
+            return open_kb_dir()
         else:
-            logging.info('Opening KB directory cancelled.')
+            logging.info('Opening KB dir: choose-again cancelled.')
             return
 
-    logging.info(f'Chosen knowledge base directory : {top_directory}')
+    logging.info(f'Opening KB dir: dir valid, shown below \n  {top_directory}')
     return top_directory
