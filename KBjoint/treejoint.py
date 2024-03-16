@@ -29,8 +29,9 @@ except ImportError as e:
 from bs4 import BeautifulSoup, Tag, Comment
 
 from anki.notes import Note
-from anki.models import ModelManager, NotetypeDict, TemplateDict
+from anki.models import ModelManager, NotetypeDict, TemplateDict, MODEL_CLOZE
 from aqt import mw
+
 
 from .joint import Joint
 
@@ -73,9 +74,10 @@ class TreeJoint(Joint):
             # TODO How to update the model? Using version to keep user's custom changes
             logging.info(f'NoteType {m["name"]} already exist, skip building')
             return
-        logging.info(f'Building Model <{cls.MODEL_NAME}> ...')
 
+        logging.info(f'Building Model <{cls.MODEL_NAME}> ...')
         m = mm.new(cls.MODEL_NAME)
+        m["type"] = MODEL_CLOZE
 
         # Set the working directory to the path of current Python script
         #   used to find template files by absolute path
@@ -162,6 +164,8 @@ class TreeJoint(Joint):
                 cloze_tags += cloze_soup.select('li > p') if not cloze_tags else []
                 cloze_tags += cloze_soup.select('li') if not cloze_tags else []
 
+                # todo if cloze_tags is empty, empty cards!
+
                 # cloze deletion - replace all cloze
                 cloze_count = 0
                 logging.debug('cloze_tags: ' + str(cloze_tags))
@@ -183,5 +187,4 @@ class TreeJoint(Joint):
 
         return new_note_ids
 
-# TODO Cloze deletion can only be used on cloze notetypes.
 # TODO Archive Anki Deck
