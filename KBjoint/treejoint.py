@@ -158,7 +158,7 @@ class TreeJoint(Joint):
 
                 # cloze deletion - find all cloze
                 logging.debug('Text field: ' + note['Text'])
-                cloze_soup = BeautifulSoup(note['Text'])
+                cloze_soup = BeautifulSoup(note['Text'], "html.parser")
                 cloze_tags: list[Tag] = []
                 cloze_tags += cloze_soup.find_all('strong')
                 cloze_tags += cloze_soup.select('li > p') if not cloze_tags else []
