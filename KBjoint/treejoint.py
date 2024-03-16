@@ -43,19 +43,19 @@ class TreeJoint(Joint):
 
     MODEL_NAME: str = 'Cloze (traceable)'
     FILE_SUFFIX: str = 'traceable'
-    FIELD_LIST: list[str] = [
-        'root',
-        'Book Title',
-        'Part',
-        'Chapter',
-        'Section',
-        'Subsection',
+
+    CLOZE_FIELDS: list[str] = [
         'Text',
-        'Front Extra',
-        'Back Extra',
+        'Extra',
+        'root',         # used to traceback to sections in the book
     ]
-    # SUBTOPIC_AMOUNT: int = 6
-    # TEMPLATE_PLACEHOLDER: str = '%n'
+    TRACEBACK_FIELDS: list[str] = [
+        'Title',        # book title, html title, etc.
+        'Chapter',      # h1
+        'Section',      # h2
+        'Subsection',   # h3
+    ]
+    FIELD_LIST: list[str] = CLOZE_FIELDS + TRACEBACK_FIELDS
 
     @classmethod
     def build_model(cls):
@@ -120,32 +120,25 @@ class TreeJoint(Joint):
         new_note_ids = []
 
         # Traverse every heading and create model for it
-        head_levels: list[str] = ['h1', 'h2', 'h3']
-        for head_level in head_levels:
-            for head in soup.find_all(head_level):
+        limit = len(cls.TRACEBACK_FIELDS)
+        for head_level in range(1, limit):  # which means [1, 2, 3]
+            for head in soup.find_all(f'h{head_level}'):
                 logging.debug(head)
 
                 # Create a note
                 note = Note(mw.col, mw.col.models.by_name(cls.MODEL_NAME))
 
-                if head_level == 'h1':
-                    note['Chapter'] = str(head)
-                elif head_level == 'h2':
-                    note['Section'] = str(head)
-                    note['Chapter'] = str(head.find_previous_sibling('h1'))
-                elif head_level == 'h3':
-                    note['Subsection'] = str(head)
-                    note['Section'] = str(head.find_previous_sibling('h2'))
-                    note['Chapter'] = str(head.find_previous_sibling('h1'))
+                # get headings for trace-back
+                note[cls.TRACEBACK_FIELDS[head_level]] = head.text
+                for x in range(1, head_level):
+                    note[cls.TRACEBACK_FIELDS[x]] = head.find_previous_sibling(f'h{x}').text
+                note['root'] = '.'.join(note[h] for h in cls.TRACEBACK_FIELDS[1:limit] if note[h])
 
-                traceback = [note['Chapter'], note['Section'], note['Subsection']]
-                note['root'] = ''.join(s for s in traceback if s)
-
-                # Attention: .next_sibling will return None
-                next_sibling = head.find_next_sibling()
+                # find the content of this head
+                next_sibling = head.find_next_sibling()  # Attention: .next_sibling will return None
                 while next_sibling:
                     logging.debug(next_sibling)
-                    if next_sibling.name in head_levels:
+                    if next_sibling.name.startswith('h'):
                         break
                     elif next_sibling.name == 'hr':
                         break
