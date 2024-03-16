@@ -154,18 +154,15 @@ class TreeJoint(Joint):
                         break
                     next_sibling = next_sibling.find_next_sibling()
 
-                # cloze deletion
+                # cloze deletion - find all cloze
+                logging.debug('Text field: ' + note['Text'])
                 cloze_soup = BeautifulSoup(note['Text'])
                 cloze_tags: list[Tag] = []
-                for tag in cloze_soup.find_all(recursive=False):
-                    if tag.name in ['ol', 'ul']:
-                        strong_tags = tag.find_all('strong')
-                        if not strong_tags:
-                            cloze_tags += tag.select('li > p')
-                        else:
-                            cloze_tags += strong_tags
-                    elif tag.name == 'p':
-                        cloze_tags += tag.find_all('strong')
+                cloze_tags += cloze_soup.find_all('strong')
+                cloze_tags += cloze_soup.select('li > p') if not cloze_tags else []
+                cloze_tags += cloze_soup.select('li') if not cloze_tags else []
+
+                # cloze deletion - replace all cloze
                 cloze_count = 0
                 logging.debug('cloze_tags: ' + str(cloze_tags))
                 for cloze_tag in cloze_tags:
