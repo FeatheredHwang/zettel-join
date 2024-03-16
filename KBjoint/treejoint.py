@@ -26,7 +26,7 @@ except ImportError as e:
     logging.warning(f'"markdown2" module not found, exit: {e}')
     sys.exit()
 
-from bs4 import BeautifulSoup, Comment
+from bs4 import BeautifulSoup, Tag, Comment
 
 from anki.notes import Note
 from anki.models import ModelManager, NotetypeDict, TemplateDict
@@ -154,6 +154,29 @@ class TreeJoint(Joint):
                         break
                     next_sibling = next_sibling.find_next_sibling()
 
+                # cloze deletion
+                cloze_soup = BeautifulSoup(note['Text'])
+                cloze_tags: list[Tag] = []
+                for tag in cloze_soup.find_all(recursive=False):
+                    if tag.name in ['ol', 'ul']:
+                        strong_tags = tag.find_all('strong')
+                        if not strong_tags:
+                            cloze_tags += tag.select('li > p')
+                        else:
+                            cloze_tags += strong_tags
+                    elif tag.name == 'p':
+                        cloze_tags += tag.find_all('strong')
+                cloze_count = 0
+                logging.debug('cloze_tags: ' + str(cloze_tags))
+                for cloze_tag in cloze_tags:
+                    cloze_count += 1
+                    p = '({})'.format(cloze_tag.string)
+                    logging.debug('pattern: ' + p)
+                    r = r'{{c%d::\1}}' % cloze_count
+                    logging.debug('repl: ' + r)
+                    note['Text'] = re.sub(p, r, note['Text'])
+                    logging.debug('Text field: ' + note['Text'])
+
                 # get deck and model
                 deck_id: DeckId = mw.col.decks.id(deck_name)  # Find or Create if not exist
                 # add note to deck, and the note object will get assigned with id
@@ -162,3 +185,6 @@ class TreeJoint(Joint):
                 logging.info(f'Note added, note.id: {note.id}')
 
         return new_note_ids
+
+# TODO Cloze deletion can only be used on cloze notetypes.
+# TODO Archive Anki Deck
