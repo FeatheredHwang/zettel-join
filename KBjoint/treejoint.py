@@ -60,7 +60,6 @@ class TreeJoint(Joint):
         'h2',
         'h3',
     ]
-    FIELD_LIST: list[str] = CLOZE_FIELDS + TRACEBACK_FIELDS
 
     @classmethod
     def build_model(cls):
@@ -89,9 +88,20 @@ class TreeJoint(Joint):
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
         logging.debug(f'Current working directory is: {os.getcwd()}')
 
-        # Add fields and Card
-        for fld in cls.FIELD_LIST:
-            mm.addField(m, mm.newField(fld))
+        # Add fields
+        for fld_name in cls.CLOZE_FIELDS:
+            fld = mm.newField(fld_name)
+            fld['size'] = 15
+            fld['plainText'] = True
+            mm.addField(m, fld)
+        mm.set_sort_index(m, cls.CLOZE_FIELDS.index('root'))
+
+        for fld_name in cls.TRACEBACK_FIELDS:
+            fld = mm.newField(fld_name)
+            fld['plainText'] = True
+            fld['collapsed'] = True
+            fld['excludeFromSearch'] = True
+            mm.addField(m, fld)
 
         # Add card template
         t = mm.newTemplate(cls.MODEL_NAME)
