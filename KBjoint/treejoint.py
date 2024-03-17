@@ -22,6 +22,7 @@ from anki.decks import DeckId
 try:
     from .Lib import markdown2
     # TODO markdown2 parser doesn't support latex
+    # todo markdown2 parser doesn't support :star: (emoji)
 except ImportError as e:
     logging.warning(f'"markdown2" module not found, exit: {e}')
     sys.exit()
@@ -149,6 +150,10 @@ class TreeJoint(Joint):
             note['root'] = '.'.join(re.sub('</?h[1-6]>', '', note[h])
                                     for h in cls.TRACEBACK_FIELDS if note[h])
 
+            # if re.search('⭐', note['root']):  # re.search also works, but re.match doesn't
+            if '⭐' in note['root']:
+                note.tags.append('marked')
+
             # find the content of this head
             next_sibling = h_tag.find_next_sibling()  # Attention: .next_sibling will return None
             while next_sibling:
@@ -195,5 +200,4 @@ class TreeJoint(Joint):
 
 # TODO Archive Anki Deck
 # TODO add comment for new note
-# TODO marked tag
 # todo pure list didn't have strong effect
