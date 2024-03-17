@@ -50,10 +50,15 @@ class TreeJoint(Joint):
         'root',         # used to traceback to sections in the book
     ]
     TRACEBACK_FIELDS: list[str] = [
-        'Title',        # book title, html title, etc.
+        # 'Title',        # book title, html title, etc.
         'Chapter',      # h1
         'Section',      # h2
         'Subsection',   # h3
+    ]
+    TRACEBACK_HEADINGS: list[str] = [
+        'h1',
+        'h2',
+        'h3',
     ]
     FIELD_LIST: list[str] = CLOZE_FIELDS + TRACEBACK_FIELDS
 
@@ -120,62 +125,63 @@ class TreeJoint(Joint):
         new_note_ids = []
 
         # Traverse every heading and create model for it
-        limit = len(cls.TRACEBACK_FIELDS)
-        for head_level in range(1, limit):  # which means [1, 2, 3]
-            for head in soup.find_all(f'h{head_level}'):
-                logging.debug(head)
+        for h_tag in soup.find_all(cls.TRACEBACK_HEADINGS):
+            logging.debug(h_tag)
+            h_pattern = re.compile('^h(?P<h_level>[1-6])$')
+            h_match = h_pattern.search(h_tag.name)
+            h_level = int(h_match.group('h_level'))
 
-                # Create a note
-                note = Note(mw.col, mw.col.models.by_name(cls.MODEL_NAME))
+            # Create a note
+            note = Note(mw.col, mw.col.models.by_name(cls.MODEL_NAME))
 
-                # get headings for trace-back
-                note[cls.TRACEBACK_FIELDS[head_level]] = head.text
-                for x in range(1, head_level):
-                    note[cls.TRACEBACK_FIELDS[x]] = head.find_previous_sibling(f'h{x}').text
-                note['root'] = '.'.join(note[h] for h in cls.TRACEBACK_FIELDS[1:limit] if note[h])
+            # get headings for trace-back
+            note[cls.TRACEBACK_FIELDS[h_level-1]] = h_tag.text
+            for x in range(0, h_level-1):
+                note[cls.TRACEBACK_FIELDS[x]] = h_tag.find_previous_sibling(f'h{x+1}').text
+            note['root'] = '.'.join(note[h] for h in cls.TRACEBACK_FIELDS[1:] if note[h])
 
-                # find the content of this head
-                next_sibling = head.find_next_sibling()  # Attention: .next_sibling will return None
-                while next_sibling:
-                    logging.debug(next_sibling)
-                    if next_sibling.name.startswith('h'):
-                        break
-                    elif next_sibling.name == 'hr':
-                        break
-                    # elif next_sibling.name == 'blockquote':
-                    elif next_sibling.name in ['p', 'ol', 'ul']:
-                        note['Text'] += str(next_sibling)
-                    else:
-                        break
-                    next_sibling = next_sibling.find_next_sibling()
+            # find the content of this head
+            next_sibling = h_tag.find_next_sibling()  # Attention: .next_sibling will return None
+            while next_sibling:
+                logging.debug(next_sibling)
+                if next_sibling.name in cls.TRACEBACK_HEADINGS:
+                    break
+                elif next_sibling.name == 'hr':
+                    break
+                # elif next_sibling.name == 'blockquote':
+                elif next_sibling.name in ['p', 'ol', 'ul']:
+                    note['Text'] += str(next_sibling)
+                else:
+                    break
+                next_sibling = next_sibling.find_next_sibling()
 
-                # cloze deletion - find all cloze
-                logging.debug('Text field: ' + note['Text'])
-                cloze_soup = BeautifulSoup(note['Text'], "html.parser")
-                cloze_tags: list[Tag] = []
-                cloze_tags += cloze_soup.find_all('strong')
-                cloze_tags += cloze_soup.select('li > p') if not cloze_tags else []
-                cloze_tags += cloze_soup.select('li') if not cloze_tags else []
+            # cloze deletion - find all cloze
+            logging.debug('Text field: ' + note['Text'])
+            cloze_soup = BeautifulSoup(note['Text'], "html.parser")
+            cloze_tags: list[Tag] = []
+            cloze_tags += cloze_soup.find_all('strong')
+            cloze_tags += cloze_soup.select('li > p') if not cloze_tags else []
+            cloze_tags += cloze_soup.select('li') if not cloze_tags else []
 
-                # Skip zero-cloze note
-                if not cloze_tags:
-                    continue
+            # Skip zero-cloze note
+            if not cloze_tags:
+                continue
 
-                # cloze deletion - replace all cloze
-                cloze_count = 0
-                for cloze_tag in cloze_tags:
-                    cloze_count += 1
-                    p = '({})'.format(cloze_tag.string)
-                    r = r'{{c%d::\1}}' % cloze_count
-                    note['Text'] = re.sub(p, r, note['Text'])
-                    # logging.debug('Text field after cloze-deletion: ' + note['Text'])
+            # cloze deletion - replace all cloze
+            cloze_count = 0
+            for cloze_tag in cloze_tags:
+                cloze_count += 1
+                p = '({})'.format(cloze_tag.string)
+                r = r'{{c%d::\1}}' % cloze_count
+                note['Text'] = re.sub(p, r, note['Text'])
+                # logging.debug('Text field after cloze-deletion: ' + note['Text'])
 
-                # get deck and model
-                deck_id: DeckId = mw.col.decks.id(deck_name)  # Find or Create if not exist
-                # add note to deck, and the note object will get assigned with id
-                mw.col.add_note(note, deck_id)
-                new_note_ids.append(note.id)
-                logging.info(f'Note added, note.id: {note.id}')
+            # get deck and model
+            deck_id: DeckId = mw.col.decks.id(deck_name)  # Find or Create if not exist
+            # add note to deck, and the note object will get assigned with id
+            mw.col.add_note(note, deck_id)
+            new_note_ids.append(note.id)
+            logging.info(f'Note added, note.id: {note.id}')
 
         return new_note_ids
 
