@@ -137,7 +137,7 @@ class TreeJoint(Joint):
 
         # Traverse every heading and create model for it
         for h_tag in soup.find_all(cls.TRACEBACK_HEADINGS):
-            logging.debug('New note for:  ' + str(h_tag))
+            logging.debug('Importing MD: New note for ' + str(h_tag))
 
             # Create a note
             note = Note(mw.col, mw.col.models.by_name(cls.MODEL_NAME))
@@ -194,10 +194,20 @@ class TreeJoint(Joint):
             # add note to deck, and the note object will get assigned with id
             mw.col.add_note(note, deck_id)
             new_note_ids.append(note.id)
-            logging.info(f'Note added, note.id: {note.id}')
+            logging.info(f'Importing MD: Note added, note.id: {note.id}')
+
+            # add comment of NoteId for new notes
+            md_content = re.sub(
+                r'(\n#+\s*{}\s*\n\n)'.format(h_tag.text),
+                r'\1' + f'<!-- NoteId: {note.id} -->\n\n',
+                md_content)
+            # there must be two '\n' at the end of the pattern,
+            #  or the comment will be parsed as part of next element in markdown2
+            logging.debug(f'Importing MD: NoteId commented.')
+
+        cls.write_file(md_content, file)
 
         return new_note_ids
 
 # TODO Archive Anki Deck
-# TODO add comment for new note
 # todo pure list didn't have strong effect
