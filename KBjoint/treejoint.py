@@ -45,9 +45,9 @@ class TreeJoint(Joint):
     FILE_SUFFIX: str = 'traceable'
 
     CLOZE_FIELDS: list[str] = [
+        'root',  # used to traceback to sections in the book
         'Text',
         'Extra',
-        'root',         # used to traceback to sections in the book
     ]
     TRACEBACK_FIELDS: list[str] = [
         # 'Title',        # book title, html title, etc.
@@ -126,24 +126,22 @@ class TreeJoint(Joint):
 
         # Traverse every heading and create model for it
         for h_tag in soup.find_all(cls.TRACEBACK_HEADINGS):
-            logging.debug(h_tag)
-            h_pattern = re.compile('^h(?P<h_level>[1-6])$')
-            h_match = h_pattern.search(h_tag.name)
-            h_level = int(h_match.group('h_level'))
+            logging.debug('New note for:  ' + str(h_tag))
 
             # Create a note
             note = Note(mw.col, mw.col.models.by_name(cls.MODEL_NAME))
 
             # get headings for trace-back
-            note[cls.TRACEBACK_FIELDS[h_level-1]] = h_tag.text
-            for x in range(0, h_level-1):
-                note[cls.TRACEBACK_FIELDS[x]] = h_tag.find_previous_sibling(f'h{x+1}').text
-            note['root'] = '.'.join(note[h] for h in cls.TRACEBACK_FIELDS[1:] if note[h])
+            h_index = cls.TRACEBACK_HEADINGS.index(h_tag.name)
+            note[cls.TRACEBACK_FIELDS[h_index]] = str(h_tag)
+            for i in range(0, h_index):
+                note[cls.TRACEBACK_FIELDS[i]] = str(h_tag.find_previous_sibling(cls.TRACEBACK_HEADINGS[i]))
+            note['root'] = '.'.join(re.sub('</?h[1-6]>', '', note[h])
+                                    for h in cls.TRACEBACK_FIELDS if note[h])
 
             # find the content of this head
             next_sibling = h_tag.find_next_sibling()  # Attention: .next_sibling will return None
             while next_sibling:
-                logging.debug(next_sibling)
                 if next_sibling.name in cls.TRACEBACK_HEADINGS:
                     break
                 elif next_sibling.name == 'hr':
