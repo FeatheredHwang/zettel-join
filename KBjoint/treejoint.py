@@ -16,8 +16,6 @@ import os
 import re
 import sys
 
-from anki.decks import DeckId
-
 # import markdown2 from the local libray, cause Anki doesn't include this module
 try:
     from .Lib import markdown2
@@ -29,12 +27,13 @@ except ImportError as e:
 
 from bs4 import BeautifulSoup, Tag, Comment
 
+from anki.decks import DeckId
 from anki.notes import Note
 from anki.models import ModelManager, NotetypeDict, TemplateDict, MODEL_CLOZE
 from aqt import mw
 
 
-from .joint import Joint
+from .joint import *
 
 
 class TreeJoint(Joint):
@@ -137,9 +136,15 @@ class TreeJoint(Joint):
 
         # Traverse every heading and create model for it
         for h_tag in soup.find_all(cls.TRACEBACK_HEADINGS):
-            logging.debug('Importing MD: New note for ' + str(h_tag))
+
+            # Check if heading has been imported (commented with note_id)
+            note_id = get_commented_noteid(h_tag)
+            if note_id:
+                logging.debug(f'Importing MD - note already imported: <{h_tag.name}> {h_tag.text}')
+                continue
 
             # Create a note
+            logging.debug(f'Importing MD - New note: <{h_tag.name}> {h_tag.text}')
             note = Note(mw.col, mw.col.models.by_name(cls.MODEL_NAME))
 
             # get headings for trace-back
