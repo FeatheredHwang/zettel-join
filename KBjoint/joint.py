@@ -105,12 +105,12 @@ class MdJoint:
             with open(file, 'r', encoding='utf-8') as f:
                 # Read the entire content of the file
                 file_content = f.read()
-                logging.debug(f"File read successfully:  {file}")
+                logging.debug(f'File read done: "{file}"')
                 return file_content
         except FileNotFoundError:
-            logging.error(f"File-read error - File not found: <{file}>")
+            logging.error(f'File-read error: File not found: "{file}"')
         except IOError as e:
-            logging.error(f"File-read error: <{file}> {e}")
+            logging.error(f'File-read error: "{file}" {e}')
         return ''
 
     @staticmethod
@@ -123,9 +123,9 @@ class MdJoint:
         try:
             with open(file, 'w', encoding='utf-8') as f:
                 f.write(content)
-            logging.debug(f"File-write successful: <{file}>")
+            logging.debug(f'File-write done: "{file}"')
         except Exception as e:
-            logging.error(f"File-write error: <{file}> {e}")
+            logging.error(f'File-write error: "{file}" {e}')
 
     def make_soup(self, file: str):
         self.content = self.read(file)
@@ -281,10 +281,14 @@ class ClozeJoint(MdJoint):
         # Traverse every heading and create note for it
         for heading in self.soup.find_all(self.TRACEBACK_MAP.keys()):
 
+            # get heading_root
+            heading_root: HeadingRoot = self.get_heading_root(heading)
+            root_str = '.'.join(heading_root.values())
+
             # Check if heading has been imported (commented with note_id)
-            note_id = self.get_commented_noteid(heading)
-            if note_id:
-                logging.debug(f'Importing MD - note already imported: "{heading.name}"')
+            noteid = self.get_commented_noteid(heading)
+            if noteid:
+                logging.debug(f'Importing MD - note already imported: "{root_str}"')
                 continue
 
             # check if heading has cloze-deletion
@@ -293,14 +297,11 @@ class ClozeJoint(MdJoint):
                 logging.debug(f'Importing MD - cloze-deletion not found under heading, continue: "{heading.name}"')
                 continue
 
-            # get heading_root dict
-            heading_root: HeadingRoot = self.get_heading_root(heading)
-
             # Create a note
             logging.debug(f'Importing MD - New note: <{heading.name}> {heading.text}')
             note = Note(mw.col, mw.col.models.byName(self.model_name))
             note['Text'] = cloze_text
-            note['root'] = '.'.join(heading_root.values())
+            note['root'] = root_str
 
             for key, value in heading_root.items():
                 note[self.TRACEBACK_MAP[key]] = value
@@ -313,7 +314,7 @@ class ClozeJoint(MdJoint):
 
             # add note to deck, and the note object will get assigned with id
             mw.col.add_note(note, deck_id)
-            self.comment_noteid(heading, note_id)
+            self.comment_noteid(heading, note.id)
             self.new_notes_count += 1
             logging.info(f'Importing MD: Note added, note.id: {note.id}')
 
