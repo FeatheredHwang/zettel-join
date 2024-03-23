@@ -24,77 +24,6 @@ class KB:
         self.init_dir(top_dir)
         self.register_joints()
 
-    def register_joints(self):
-        if not self.top_dir:
-            return
-        # todo let user choose which joint works?
-        self.joints = {
-            ClozeJoint.FILE_SUFFIX: ClozeJoint(),
-            OnesideJoint.FILE_SUFFIX: OnesideJoint()
-        }
-
-    def join(self):
-        """
-        Join your knowledge base to Anki
-        """
-        if not self.top_dir:
-            return
-        self.traverse()
-        # Calculate how many cards imported
-        new_notes_count = sum(joint.new_notes_count for joint in self.joints.values())
-        logging.info(f'Importing KB: {new_notes_count} notes imported.\n')
-        showInfo(f'{new_notes_count} notes imported.')
-        # With notes added, refresh the deck browser
-        mw.deckBrowser.refresh()
-        # todo open the notesBrowser window, show the last added notes
-
-    def traverse(self):
-        # Traverse the directory tree using os.walk()
-        # todo: Popup a process bar to show the process
-        #   and stop user doing anything else before importation done.
-        # mw.progress.start(max=1, parent=mw)
-        # # Processing...
-        # mw.progress.update()
-        # mw.progress.finish()
-        # TODO using GitPython to monitor changes and record each file's notetype
-        for root, dirs, files in os.walk(self.top_dir):
-            # Filter out hidden directories and files
-            dirs[:] = [d for d in dirs if not d.startswith('.')]
-            files = [f for f in files if not f.startswith('.')]
-            # Get the relative path of the current directory, replace os.sep('\') with '::' as deck's name
-            deck_name: str = os.path.relpath(root, self.top_dir).replace(os.sep, '::')
-            # TODO only take two levels of the dir path
-            # todo 'part' for the third level of dir path
-            logging.debug(f'Importing KB: under deck_name "{deck_name}"')
-
-            for file in files:
-                # judge if a file is a Markdown (.md) file
-                if file.endswith('.md'):
-                    suffix = self.get_suffix(file)
-                    joint: MdJoint
-                    try:
-                        joint = self.joints[suffix]
-                    except KeyError:
-                        joint = next(iter(self.joints.values()))
-                    # logging.debug(f'Inside the directory a md file found: `{file}`')
-                    joint.join(str(os.path.join(root, file)), deck_name)
-
-    @staticmethod
-    def get_suffix(file: str) -> str:
-        """
-        Return suffix in filename that shows which joint the file uses
-        :param file: filename str
-        :return: suffix str
-        """
-        m = re.fullmatch(
-            r'.+\((?P<suffix>\w+)\)\.\w+',
-            file
-        )
-        return m.group('suffix') if m else ''
-
-    def traverse_archive(self):
-        pass
-
     def init_dir(self, top_dir: str = None):
         """
         Get KB directory
@@ -102,6 +31,7 @@ class KB:
         if not top_dir:
             # todo read config
             init_dir = os.path.expanduser("~")
+            # noinspection PyTypeChecker
             top_dir = QFileDialog.getExistingDirectory(
                 mw,
                 'Open Knowledge Base Directory',
@@ -127,3 +57,101 @@ class KB:
         self.top_dir = top_dir
         # todo write config
         # todo make the dir root
+
+    def register_joints(self):
+        if not self.top_dir:
+            return
+        # todo let user choose which joint works?
+        self.joints = {
+            ClozeJoint.FILE_SUFFIX: ClozeJoint(),
+            OnesideJoint.FILE_SUFFIX: OnesideJoint()
+        }
+
+    def join(self):
+        """
+        Join your knowledge base to Anki
+        """
+        if not self.top_dir:
+            return
+        self.traverse()
+        # Calculate how many cards imported
+        new_notes_count = sum(joint.new_notes_count for joint in self.joints.values())
+        logging.info(f'Importing KB: {new_notes_count} notes imported.\n')
+        showInfo(f'{new_notes_count} notes imported.')
+        # With notes added, refresh the deck browser
+        mw.deckBrowser.refresh()
+        # todo open the notesBrowser window, show the last added notes
+
+    def traverse(self):
+        """
+        Traverse the directory tree using os.walk()
+        """
+        # todo: Popup a process bar to show the process
+        #   and stop user doing anything else before importation done.
+        # mw.progress.start(max=1, parent=mw)
+        # # Processing...
+        # mw.progress.update()
+        # mw.progress.finish()
+        # TODO using GitPython to monitor changes and record each file's notetype
+        for root, dirs, files in os.walk(self.top_dir):
+            # Attention, dirs and files are just basename without path
+            # Filter out hidden directories and files
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            files = [f for f in files if not f.startswith('.')]
+            # Get the relative path of the current directory, replace os.sep('\') with '::' as deck's name
+            deck_name: str = os.path.relpath(root, self.top_dir).replace(os.sep, '::')
+            # TODO only take two levels of the dir path
+            # todo 'part' for the third level of dir path
+            logging.debug(f'Importing KB: under deck_name "{deck_name}"')
+
+            for file in files:
+                # judge if a file is a Markdown (.md) file
+                if file.endswith('.md'):
+                    suffix = self.get_suffix(file)
+                    joint: MdJoint
+                    try:
+                        joint = self.joints[suffix]
+                    except KeyError:
+                        joint = next(iter(self.joints.values()))
+                    # logging.debug(f'Inside the directory a md file found: `{file}`')
+                    joint.join(str(os.path.join(root, file)), deck_name)
+
+    def traverse_archive(self):
+        pass
+
+    @staticmethod
+    def get_suffix(file: str) -> str:
+        """
+        Return suffix in filename that shows which joint the file uses
+        :param file: filepath
+        :return: suffix str
+        """
+        m = re.fullmatch(
+            r'.+\[(?P<suffix>\w+)]\.\w+',
+            file
+        )
+        return m.group('suffix') if m else ''
+
+    @staticmethod
+    def remove_suffix(file: str) -> str:
+        """
+        Remove joint suffix in filename, and rename the file.
+        :param file: filepath
+        :return: filename with suffix removed
+        """
+        new_file = re.sub(r'\[\w+]', '', file)
+        os.rename(file, new_file)
+        return new_file
+
+    @staticmethod
+    def add_suffix(file: str, suffix: str) -> str:
+        """
+        Add/Replace joint suffix to filename, and rename the file.
+        :param file: filepath
+        :param suffix: joint suffix text
+        :return: filename with suffix added/replaced
+        """
+        name, ext = os.path.splitext(re.sub(r'\[\w+]', '', file))
+        new_file = f'{name}[{suffix}]{ext}'
+        os.rename(file, new_file)
+        return new_file
