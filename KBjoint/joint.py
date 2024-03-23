@@ -16,7 +16,7 @@ try:
     # TODO markdown2 parser doesn't support latex
     # todo markdown2 parser doesn't support :star: (emoji)
 except ImportError as import_error:
-    logging.warning(f'"markdown2" module not found, exit: {import_error}')
+    logging.warning(f'"markdown2" import error: {import_error}')
     sys.exit()
 
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment
@@ -43,37 +43,56 @@ class MdJoint:
     DEFAULT_NAME: str = 'Basic'
     FILE_SUFFIX: str = 'basic'
 
+    model_name: str
+    new_notes_count: int
     content: str
     soup: BeautifulSoup
-    new_notes_count: int
 
     HEADINGS: list[str] = [f'h{n}' for n in range(1, 7)]
 
     def __init__(self, model_name: str = DEFAULT_NAME):
         # Using model manager is the only way to add new model
         # verify if model exists
+        self.model_name = model_name
+        self.new_notes_count = 0
+
         m = mw.col.models.byName(model_name)
         if m:
             # TODO How to update the model? Using version to keep user's custom changes
-            logging.info(f'Initialize model: "{model_name}" model already exists, skip building.')
+            logging.info(f'Initializing model - model already exists: "{model_name}"')
         else:
             # build model if not exists
-            self.build(model_name)
+            logging.info(f'Initializing model - model not exists, build() started: "{model_name}"')
+            # Set the working directory to the path of current Python script
+            #   used to find template files by relative path
+            os.chdir(os.path.dirname(os.path.abspath(__file__)))
+            logging.debug(f'Initializing model - current working directory is: {os.getcwd()}')
+            self.build()
+            logging.info(f'Initializing model - model not exists, build() done: "{model_name}"')
 
-        self.new_notes_count = 0
-
-    def build(self, model_name: str = DEFAULT_NAME):
+    def build(self):
         """
-        Build up the model but not add to Anki yet
+        Build up the model and add it to Anki yet
         """
         mm: ModelManager = mw.col.models
+        m: NotetypeDict = mm.new(self.model_name)
 
-        logging.info(f'Initialize model: Building Model "{model_name}" started.')
-        m: NotetypeDict = mm.new(model_name)
-        # TODO build "basic" model
+        # Add fields
+        for fld_name in ['Front', 'Back']:
+            fld = mm.newField(fld_name)
+            fld['size'] = 15
+            fld['plainText'] = True
+            mm.addField(m, fld)
+        # Add card template
+        t: TemplateDict = mm.newTemplate('Card 1')
+        t['qfmt'] = "{{Front}}"
+        t['afmt'] = "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}"
+        mm.addTemplate(m, t)
+        # Add css
+        m['css'] = self.read('templates/basic.css')
+
         # Add the Model (NoteTypeDict) to Anki
         mm.add_dict(notetype=m)
-        logging.info(f'Initialize model: Building Model "{model_name}" finished.')
 
     def join(self, file: str, deck_name: str):
         """
@@ -105,10 +124,10 @@ class MdJoint:
             with open(file, 'r', encoding='utf-8') as f:
                 # Read the entire content of the file
                 file_content = f.read()
-                logging.debug(f'File read done: "{file}"')
+                logging.debug(f'File-read done: "{file}"')
                 return file_content
         except FileNotFoundError:
-            logging.error(f'File-read error: File not found: "{file}"')
+            logging.error(f'File-read error - File not found: "{file}"')
         except IOError as e:
             logging.error(f'File-read error: "{file}" {e}')
         return ''
@@ -223,15 +242,12 @@ class ClozeJoint(MdJoint):
     }
 
     def __init__(self, model_name=DEFAULT_NAME):
-        self.model_name = model_name
         super().__init__(model_name=model_name)
 
-    def build(self, model_name: str = DEFAULT_NAME):
+    def build(self):
 
         mm: ModelManager = mw.col.models
-        logging.info(f'Initialize model: Building Model "{model_name}" started.')
-
-        m: NotetypeDict = mm.new(model_name)
+        m: NotetypeDict = mm.new(self.model_name)
         # as cloze type
         m["type"] = MODEL_CLOZE
 
@@ -250,13 +266,8 @@ class ClozeJoint(MdJoint):
             fld['excludeFromSearch'] = True
             mm.addField(m, fld)
 
-        # Set the working directory to the path of current Python script
-        #   used to find template files by absolute path
-        os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        logging.debug(f'Current working directory is: {os.getcwd()}')
-
         # Add card template
-        t: TemplateDict = mm.newTemplate()
+        t: TemplateDict = mm.newTemplate('Cloze')
         t['qfmt'] = self.read('templates/cloze_front.html')
         t['afmt'] = self.read('templates/cloze_back.html')
         mm.addTemplate(m, t)
@@ -266,8 +277,6 @@ class ClozeJoint(MdJoint):
 
         # Add the Model (NoteTypeDict) to Anki
         mm.add_dict(notetype=m)
-
-        logging.info(f'Initialize model: Building Model "{model_name}" finished.')
 
     def join(self, file: str, deck_name: str):
         """
@@ -294,7 +303,7 @@ class ClozeJoint(MdJoint):
             # check if heading has cloze-deletion
             cloze_text = self.get_cloze_text(heading)
             if not cloze_text:
-                logging.debug(f'Importing MD - cloze-deletion not found under heading, continue: "{heading.name}"')
+                logging.debug(f'Importing MD - cloze-deletion not found, skip: "{root_str}"')
                 continue
 
             # Create a note
@@ -354,4 +363,6 @@ class ClozeJoint(MdJoint):
 
 
 class OnesideJoint(MdJoint):
-    pass
+
+    DEFAULT_NAME = 'Oneside'
+    FILE_SUFFIX = 'oneside'
