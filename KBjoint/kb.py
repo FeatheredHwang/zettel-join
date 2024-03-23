@@ -5,7 +5,6 @@ Knowledge Base
 import logging
 import os
 import re
-from typing import Union
 
 from aqt import mw
 from aqt.qt import QFileDialog
@@ -19,14 +18,16 @@ class KB:
     Knowledge Base
     """
     top_dir: str = ''
-
-    joints: dict[str, MdJoint]
+    joints: dict[str, MdJoint] = {}
 
     def __init__(self, top_dir: str = None):
-
         self.init_dir(top_dir)
+        self.register_joints()
 
-        # TODO let user choose which joint works?
+    def register_joints(self):
+        if not self.top_dir:
+            return
+        # todo let user choose which joint works?
         self.joints = {
             ClozeJoint.FILE_SUFFIX: ClozeJoint(),
             OnesideJoint.FILE_SUFFIX: OnesideJoint()
@@ -37,18 +38,12 @@ class KB:
         Join your knowledge base to Anki
         """
         if not self.top_dir:
-            logging.warning('Importing KB: dir is empty, without any notes imported.\n')
             return
-
-        # TODO using GitPython to monitor changes and record each file's notetype
-
         self.traverse()
-
         # Calculate how many cards imported
         new_notes_count = sum(joint.new_notes_count for joint in self.joints.values())
         logging.info(f'Importing KB: {new_notes_count} notes imported.\n')
         showInfo(f'{new_notes_count} notes imported.')
-
         # With notes added, refresh the deck browser
         mw.deckBrowser.refresh()
         # todo open the notesBrowser window, show the last added notes
@@ -61,17 +56,13 @@ class KB:
         # # Processing...
         # mw.progress.update()
         # mw.progress.finish()
+        # TODO using GitPython to monitor changes and record each file's notetype
         for root, dirs, files in os.walk(self.top_dir):
-
             # Filter out hidden directories and files
             dirs[:] = [d for d in dirs if not d.startswith('.')]
             files = [f for f in files if not f.startswith('.')]
-
-            # Calculate the relative path of the current directory
-            relative_root = os.path.relpath(root, self.top_dir)
-
-            # replace os.sep with '::' as deck's name
-            deck_name: str = relative_root.replace(os.sep, '::')
+            # Get the relative path of the current directory, replace os.sep('\') with '::' as deck's name
+            deck_name: str = os.path.relpath(root, self.top_dir).replace(os.sep, '::')
             # TODO only take two levels of the dir path
             # todo 'part' for the third level of dir path
             logging.debug(f'Importing KB: under deck_name "{deck_name}"')
@@ -117,7 +108,7 @@ class KB:
                 directory=init_dir
             )
             if not top_dir:
-                logging.info('Initializing KB: open-kb-dir cancelled')
+                logging.info('Initializing KB: open-kb-dir cancelled\n')
                 return
 
         # check if the dir contains a 'ROOT' file, in case we open a sub of the top-directory
@@ -125,14 +116,14 @@ class KB:
             logging.info('Initializing KB: dir not valid - "ROOT" file missing, ask user for choose-again.')
             if askUser('Knowledge Base directory does not contain "ROOT" file inside.\n'
                        'Choose again?'):
+                # self.init_dir()
                 self.init_dir()
                 return
             else:
-                logging.info('Initializing KB: open-kb-dir cancelled')
+                logging.info('Initializing KB: open-kb-dir cancelled\n')
                 return
 
+        logging.info(f'Initializing KB done: top-dir is "{top_dir}"')
         self.top_dir = top_dir
         # todo write config
-        logging.info(f'Initializing KB done: top-dir is "{top_dir}"')
-
         # todo make the dir root
