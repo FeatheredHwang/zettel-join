@@ -18,18 +18,18 @@ class KB:
     """
     Knowledge Base
     """
-    top_dir: str
+    top_dir: str = ''
 
     joints: dict[str, MdJoint]
 
     def __init__(self, top_dir: str = None):
-        if top_dir:
-            self.top_dir = top_dir
-        else:
-            self.top_dir = self.open_kb_dir()
+
+        self.init_dir(top_dir)
+
+        # TODO let user choose which joint works?
         self.joints = {
             ClozeJoint.FILE_SUFFIX: ClozeJoint(),
-            # OnesideJoint.FILE_SUFFIX: OnesideJoint()
+            OnesideJoint.FILE_SUFFIX: OnesideJoint()
         }
 
     def join(self):
@@ -37,10 +37,8 @@ class KB:
         Join your knowledge base to Anki
         """
         if not self.top_dir:
-            logging.warning('Opening KB dir: empty dir path, no cards imported.\n')
+            logging.warning('Importing KB: dir is empty, without any notes imported.\n')
             return
-        else:
-            logging.info(f'\nThe KB located at {self.top_dir}')
 
         # TODO using GitPython to monitor changes and record each file's notetype
 
@@ -48,8 +46,7 @@ class KB:
 
         # Calculate how many cards imported
         new_notes_count = sum(joint.new_notes_count for joint in self.joints.values())
-        logging.info(f'{new_notes_count} notes imported.\n'
-                     '================================================================')
+        logging.info(f'Importing KB: {new_notes_count} notes imported.\n')
         showInfo(f'{new_notes_count} notes imported.')
 
         # With notes added, refresh the deck browser
@@ -77,7 +74,7 @@ class KB:
             deck_name: str = relative_root.replace(os.sep, '::')
             # TODO only take two levels of the dir path
             # todo 'part' for the third level of dir path
-            logging.debug(f'Create deck name using relative directory path: `{deck_name}`')
+            logging.debug(f'Importing KB: under deck_name "{deck_name}"')
 
             for file in files:
                 # judge if a file is a Markdown (.md) file
@@ -102,48 +99,40 @@ class KB:
             r'.+\((?P<suffix>\w+)\)\.\w+',
             file
         )
-        return m.group('suffix') if m else 'SUFFIX_MISSING'
+        return m.group('suffix') if m else ''
 
     def traverse_archive(self):
         pass
 
-    # The | symbol for type hinting is introduced in Python 3.10 and later versions.
-    # For now, Anki uses Python 3.9
-    # def open_kb_dir(self) -> str | None:
-    def open_kb_dir(self) -> Union[str, None]:
+    def init_dir(self, top_dir: str = None):
         """
-        Get KB directory to traverse
-        :return: The directory path of chosen
+        Get KB directory
         """
-        # todo using config
-        # try:
-        #     init_dir = config['last_top_dir']
-        # except KeyError:
-        init_dir = os.path.expanduser("~")
-        # noinspection PyTypeChecker
-        top_directory = QFileDialog.getExistingDirectory(
-            mw,
-            'Open the Knowledge Base Directory',
-            directory=init_dir
-        )
-
-        # check if user cancelled selection
-        if not top_directory:
-            logging.info('Opening KB dir: cancelled')
-            return
-
-        # save config
-        # config['last_top_dir'] = top_directory
-
-        # check if KB-folder or not, in case we open a sub of the top-directory
-        if not os.path.exists(os.path.join(top_directory, 'ROOT')):
-            logging.info("Opening KB dir: dir not valid - 'ROOT' file missing, ask user for choose-again")
-            if askUser("The directory you choose does not contain KB 'ROOT' file inside.\n"
-                       "Choose again? "):
-                return self.open_kb_dir()
-            else:
-                logging.info("Opening KB dir: choose-again cancelled.")
+        if not top_dir:
+            # todo read config
+            init_dir = os.path.expanduser("~")
+            top_dir = QFileDialog.getExistingDirectory(
+                mw,
+                'Open Knowledge Base Directory',
+                directory=init_dir
+            )
+            if not top_dir:
+                logging.info('Initializing KB: open-kb-dir cancelled')
                 return
 
-        logging.info(f"Opening KB dir: dir valid, shown below \n  {top_directory}")
-        return top_directory
+        # check if the dir contains a 'ROOT' file, in case we open a sub of the top-directory
+        if not os.path.exists(os.path.join(top_dir, 'ROOT')):
+            logging.info('Initializing KB: dir not valid - "ROOT" file missing, ask user for choose-again.')
+            if askUser('Knowledge Base directory does not contain "ROOT" file inside.\n'
+                       'Choose again?'):
+                self.init_dir()
+                return
+            else:
+                logging.info('Initializing KB: open-kb-dir cancelled')
+                return
+
+        self.top_dir = top_dir
+        # todo write config
+        logging.info(f'Initializing KB done: top-dir is "{top_dir}"')
+
+        # todo make the dir root
