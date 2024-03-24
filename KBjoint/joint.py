@@ -265,14 +265,13 @@ class ClozeJoint(MdJoint):
             fld['excludeFromSearch'] = True
             mm.addField(m, fld)
 
-        # Add card template
+        # Add card template and css
         t: TemplateDict = mm.newTemplate('Cloze')
         t['qfmt'] = self.read('templates/cloze_front.html')
         t['afmt'] = self.read('templates/cloze_back.html')
         mm.addTemplate(m, t)
-
-        # Add css
         m['css'] = self.read('templates/cloze.css')
+        # TODO delete all unnecessary lines that belong to TopicTree
 
         # Add the Model (NoteTypeDict) to Anki
         mm.add_dict(notetype=m)
@@ -300,7 +299,7 @@ class ClozeJoint(MdJoint):
                 continue
 
             # check if heading has cloze-deletion
-            cloze_text = self.get_cloze_text(heading)
+            cloze_text, extra_text = self.get_cloze_text(heading)
             if not cloze_text:
                 logging.debug(f'Importing MD - cloze-deletion not found, skip: "{root_str}"')
                 continue
@@ -308,9 +307,9 @@ class ClozeJoint(MdJoint):
             # Create a note
             logging.debug(f'Importing MD - New note: <{heading.name}> {heading.text}')
             note = Note(mw.col, mw.col.models.byName(self.model_name))
-            note['Text'] = cloze_text
             note['root'] = root_str
-
+            note['Text'] = cloze_text
+            note['Extra'] = extra_text
             for key, value in heading_root.items():
                 note[self.TRACEBACK_MAP[key]] = value
             if '⭐' in note['root']:  # re.search also works, but re.match doesn't
@@ -330,25 +329,21 @@ class ClozeJoint(MdJoint):
         self.write(file, self.content)
         # TODO not write again if no comment added
 
-    def get_cloze_text(self, heading: Tag) -> str:
+    def get_cloze_text(self, heading: Tag) -> (str, str):
+        # Get cloze text, skip if empty
         heading_soup: BeautifulSoup = self.get_heading_soup(heading)
-        cloze_text: str = ''.join(str(tag) for tag in heading_soup.find_all(['p', 'ol', 'ul']))
-        # Skip if empty
+        cloze_text: str = ''.join(str(tag) for tag in heading_soup.find_all(['p', 'ol', 'ul'], recursive=False))
         if not cloze_text:
-            return ''
+            return '', ''
 
+        # find all cloze-deletion, skip notes if empty
         cloze_soup: BeautifulSoup = BeautifulSoup(cloze_text, 'html.parser')
-
-        # find all cloze-deletion
         cloze_tags: list[Tag] = []
         cloze_tags += cloze_soup.find_all('strong')
         cloze_tags += cloze_soup.select('li > p') if not cloze_tags else []
         cloze_tags += cloze_soup.select('li') if not cloze_tags else []
-        # todo pure list didn't have strong effect
-
-        # Skip notes that doesn't contain cloze-deletion
         if not cloze_tags:
-            return ''
+            return '', ''
 
         # cloze deletion - replace all cloze
         cloze_count = 0
@@ -359,8 +354,10 @@ class ClozeJoint(MdJoint):
             cloze_text = re.sub(p, r, cloze_text)
             # logging.debug('Text field after cloze-deletion: ' + note['Text'])
 
-        return cloze_text
+        # Get Extra text
+        extra_text: str = ''.join(str(tag) for tag in heading_soup.find_all('blockquote', recursive=False))
 
+        return cloze_text, extra_text
 
 class OnesideJoint(MdJoint):
 
