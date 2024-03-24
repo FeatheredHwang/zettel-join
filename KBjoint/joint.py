@@ -272,7 +272,7 @@ class ClozeJoint(MdJoint):
         mm.addTemplate(m, t)
 
         # Add css
-        m['css'] = self.read('templates/css.css')
+        m['css'] = self.read('templates/cloze.css')
 
         # Add the Model (NoteTypeDict) to Anki
         mm.add_dict(notetype=m)
