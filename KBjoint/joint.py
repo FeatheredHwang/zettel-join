@@ -2,28 +2,27 @@
 # Copyright: Kyle Hwang <feathered.hwang@hotmail.com>
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
 
+"""
+
+# TODO support pictures
+# TODO markdown2 parser doesn't support latex
+# todo markdown2 parser doesn't support :star: (emoji)
+
+"""
+
 
 import logging
 import os
-import sys
 import re
 
-from anki.notes import NoteId
-
 # import markdown2 from the local libray, cause Anki doesn't include this module
-try:
-    from .Lib import markdown2
-    # TODO markdown2 parser doesn't support latex
-    # todo markdown2 parser doesn't support :star: (emoji)
-except ImportError as import_error:
-    logging.warning(f'"markdown2" import error: {import_error}')
-    sys.exit()
+from .Lib import markdown2
 
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment
 
 from anki.decks import DeckId
 from anki.models import ModelManager, NotetypeDict, TemplateDict, MODEL_CLOZE
-from anki.notes import Note
+from anki.notes import Note, NoteId
 from aqt import mw
 
 # legacy types
@@ -52,10 +51,10 @@ class MdJoint:
 
     def __init__(self, model_name: str = DEFAULT_NAME):
         # Using model manager is the only way to add new model
-        # verify if model exists
         self.model_name = model_name
         self.new_notes_count = 0
 
+        # verify if model exists
         m = mw.col.models.byName(model_name)
         if m:
             # TODO How to update the model? Using version to keep user's custom changes
@@ -329,6 +328,7 @@ class ClozeJoint(MdJoint):
 
         # Finally, refresh the source file with comment
         self.write(file, self.content)
+        # TODO not write again if no comment added
 
     def get_cloze_text(self, heading: Tag) -> str:
         heading_soup: BeautifulSoup = self.get_heading_soup(heading)
