@@ -54,7 +54,6 @@ class MdJoint:
         # verify if model exists
         m = mw.col.models.byName(model_name)
         if m:
-            # TODO How to update the model? Using version to keep user's custom changes
             logging.info(f'Initializing model - model already exists: "{model_name}"')
         else:
             # build model if not exists
@@ -90,6 +89,17 @@ class MdJoint:
         # Add the Model (NoteTypeDict) to Anki
         mm.add_dict(notetype=m)
 
+    def check_feasible(self, file: str) -> bool:
+        """
+        check if the file feasible for the model
+        :param file: filepath
+        :return: feasible or not
+        """
+        if re.match(r'.*\.md$', file, flags=re.IGNORECASE) \
+                and self.get_suffix(file) == self.FILE_SUFFIX:
+            return True
+        return False
+
     def join(self, file: str, deck_name: str):
         """
         Parse the file content, map them on the model,
@@ -97,15 +107,6 @@ class MdJoint:
         :param file: filepath of the kb md-format file
         :param deck_name: deck name where to import notes to
         """
-        pass
-
-    def verify(self, file: str) -> bool:
-        """
-        check if the file appropriate for the model
-        :param file: filepath
-        :return: appropriate or not
-        """
-        # TODO file analyse - if suitable for this model/joint
         pass
 
     @staticmethod
@@ -198,7 +199,7 @@ class MdJoint:
         sibling = heading.find_next_sibling()  # Attention: .next_sibling might return NavigableString
         # todo include subheading
         if recursive:
-            stop = self.HEADINGS[:self.HEADINGS.index(heading.name)+1]
+            stop = self.HEADINGS[:self.HEADINGS.index(heading.name) + 1]
         else:
             stop = self.HEADINGS
         while sibling and sibling.name not in stop and sibling.name != 'hr':
@@ -223,11 +224,49 @@ class MdJoint:
         # Check if the tag is part of a BeautifulSoup instance
         if heading.parent is not self.soup:
             raise ValueError("Heading tag comes from another parse tree.")
+        # todo no need to check
+
+    @staticmethod
+    def get_suffix(file: str) -> str:
+        """
+        Return suffix in filename that shows which joint the file uses
+        :param file: filepath
+        :return: suffix str
+        """
+        m = re.fullmatch(
+            r'.+\[(?P<suffix>\w+)]\.\w+',
+            file
+        )
+        return m.group('suffix') if m else ''
+
+    @staticmethod
+    def remove_suffix(file: str) -> str:
+        """
+        Remove joint suffix in filename, and rename the file.
+        :param file: filepath
+        :return: filename with suffix removed
+        """
+        new_file = re.sub(r'\[\w+]', '', file)
+        os.rename(file, new_file)
+        return new_file
+
+    @staticmethod
+    def add_suffix(file: str, suffix: str) -> str:
+        """
+        Add/Replace joint suffix to filename, and rename the file.
+        :param file: filepath
+        :param suffix: joint suffix text
+        :return: filename with suffix added/replaced
+        """
+        name, ext = os.path.splitext(re.sub(r'\[\w+]', '', file))
+        new_file = f'{name}[{suffix}]{ext}'
+        os.rename(file, new_file)
+        return new_file
 
 
 class ClozeJoint(MdJoint):
     DEFAULT_NAME: str = 'Cloze (traceable)'
-    FILE_SUFFIX: str = 'traceable'
+    FILE_SUFFIX: str = 'cloze'
 
     NORMAL_FIELDS: list[str] = [
         'root',  # used to traceback to sections in the book
@@ -323,7 +362,7 @@ class ClozeJoint(MdJoint):
             mw.col.add_note(note, deck_id)
             self.comment_noteid(heading, note.id)
             new_notes_count += 1
-            logging.info(f'Importing MD: Note added, note.id: {note.id}')
+            logging.debug(f'Importing MD: Note added, note.id: {note.id}')
 
         # Finally, comment the source file if new-notes imported
         if new_notes_count > 0:
