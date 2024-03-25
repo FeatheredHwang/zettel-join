@@ -1,76 +1,117 @@
+/* CSS Variables */
 :root {
-  /* CSS Variables */
-  --bg-color: #f4f5e2;
-  --text-color: #24160b;
-  --md-char-color: #415427;
-  --meta-content-color: #5b808d;
+  /* DEFAULT variable name */
+  /* text color */
+  --fg: #24160b;
+  /* background color */
+  --canvas: #f4f5e2;
 
+  /* custom variable name */
   --strong-color: #808d72;
-  --em-color: #FF5370;
   --h-color: #c4a970;
   --blockquote-color: #777777;
+  --cloze-color: #FF5370;
 }
+
+:root.night-mode {
+  /* DEFAULT variable name */
+  /* text color */
+  --fg: #f4f5e2;
+  /* background color */
+  --canvas: #24160b;
+}
+
+
+
+/* top-level */
 
 .card {
   font-family: arial;
-  font-size: 18px;
-  color: var(--text-color);
-  background-color: var(--bg-color);
+  font-size: 16px;
+  /* color: var(--text-color);
+  background-color: var(--bg-color); */
 }
 
-strong {
-  font-weight: Bold;
-  font-size: 1.4rem;
+.night.card {
+  background-color: var(--canvas);
+}
+
+#qa>* {
+  margin-inline-start: 1em;
+}
+
+
+
+/* generic block-level elements */
+
+p {
+  text-align: justify;
+  margin-block-start: 0.5em;
+  margin-block-end: 0.5em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+}
+
+blockquote {
+  color: var(--blockquote-color);
+  text-align: justify;
+  font-size: 0.9rem;
+  margin-block-start: 0.5em;
+  margin-block-end: 0.5em;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+}
+
+/* heading elements */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--h-color);
+  font-size: 1em;
+  font-weight: normal;
+  text-align: center;
+  margin-block-start: 0.67em;
+  margin-block-end: 0.67em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+}
+
+/* tables */
+
+/* lists */
+
+ol,
+ul {
+  padding-inline-start: 1em;
+}
+
+li p,
+li blockquote{
+  margin-block-start: 0;
+  margin-block-end: 0;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+}
+
+
+
+/* generic block-level elements */
+
+strong,
+b {
+  font-weight: bold;
   color: var(--strong-color);
 }
 
-/* hint */
-#header {
-  font-size: 0.9rem;
-  color: var(--blockquote-color);
-  margin: 10px 20px 0;
-}
 
-#header * {
-  color: var(--blockquote-color);
-  font-weight: normal;
-  font-size: 1rem;
-  margin:0;
-}
 
-/* Question */
-#question {
-  text-align: center;
+/* cloze */
+.cloze {
+  font-weight: Bold;
+  font-size: 1.2rem;
+  color: var(--cloze-color);
 }
-
-#question p{
-  font-size: 1rem;
-}
-
-h1, h2, h3, h4 {
-  color: var(--h-color);
-  margin: 5px 10px 10px;
-}
-
-h1{
-  font-size: 2rem;
-}
-
-h2{
-  font-size: 1.4rem;
-}
-
-#hint blockquote {
-  text-align: justify;
-  font-size: 0.9rem;
-  margin: 0 10px 0;
-}
-
-/* Answer */
-#answer {
-  font-size: 1rem;
-  font-weight: normal;
-  text-align: justify;
-  margin: 0 10px 0;
-}
-
