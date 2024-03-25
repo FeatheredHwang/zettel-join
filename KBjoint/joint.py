@@ -366,7 +366,7 @@ class ClozeJoint(MdJoint):
 
         # Finally, comment the source file if new-notes imported
         if new_notes_count > 0:
-            self.new_notes_count = new_notes_count
+            self.new_notes_count += new_notes_count
             self.write(file, self.content)
 
     def get_cloze_text(self, heading: Tag) -> (str, str):
