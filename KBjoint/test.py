@@ -5,7 +5,7 @@ import shutil
 from aqt import gui_hooks
 from aqt import mw
 
-from ..kb import KB
+from KBjoint.kb import KB
 
 kb_dir = r'D:\Projects\.test\KB-test'
 
