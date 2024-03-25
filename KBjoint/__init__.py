@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.DEBUG,
                     filename=log_file_path,
                     filemode='w')
 # log the module's directory
-logging.info(f'Logging file path: {log_file_path}')
+logging.info(f'Initializing logging - log file path: {log_file_path}')
 
 
 # Add 'KB Join' menu item
@@ -45,6 +45,7 @@ mw.form.menuTools.addAction(action)
 # import test modules if exist
 ##################################################
 try:
-    from .test import *
+    from .test.quick import *
+    logging.info("Importing test module: done.")
 except ImportError:
-    logging.info("test module doesn't exist.")
+    logging.info("Importing test module: test module doesn't exist.\n")

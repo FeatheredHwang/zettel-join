@@ -10,6 +10,7 @@ kb_dir = r'D:\Projects\.test\KB-test'
 
 
 def output_model():
+    # todo write to file rather than logging, do not use logging in test modules
     logging.info('\n' +
                  str(mw.col.models.by_name('Cloze (traceable)'))
                  )
