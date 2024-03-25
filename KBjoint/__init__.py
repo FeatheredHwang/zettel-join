@@ -46,6 +46,6 @@ mw.form.menuTools.addAction(action)
 ##################################################
 try:
     from .test.quick import *
-    logging.info("Importing test module: done.")
+    logging.info("Importing test module: done.\n")
 except ImportError:
     logging.info("Importing test module: test module doesn't exist.\n")

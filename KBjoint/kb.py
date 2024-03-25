@@ -42,8 +42,8 @@ class KB:
                 return
 
         # check if the dir contains a 'ROOT' file, in case we open a sub of the top-directory
-        if not os.path.exists(os.path.join(top_dir, 'ROOT')):
-            logging.info('Initializing KB: dir not valid - "ROOT" file missing, ask user for choose-again.')
+        if not os.path.exists(os.path.join(top_dir, '.root')):
+            logging.info('Initializing KB: dir not valid - ".root" folder missing, ask user to choose-again.')
             if askUser('Knowledge Base directory does not contain "ROOT" file inside.\n'
                        'Choose again?'):
                 # self.init_dir()
@@ -95,15 +95,21 @@ class KB:
         # TODO using GitPython to monitor changes and record each file's notetype
         for root, dirs, files in os.walk(self.top_dir):
             # Attention, dirs and files are just basename without path
-            # Filter out hidden directories and files
+            # Filter out hidden directories
             dirs[:] = [d for d in dirs if not d.startswith('.')]
-            files = [f for f in files if not f.startswith('.')]
-            # Get the relative path of the current directory, replace os.sep('\') with '::' as deck's name
-            deck_name: str = os.path.relpath(root, self.top_dir).replace(os.sep, '::')
-            # TODO only take two levels of the dir path
-            # todo 'part' for the third level of dir path
+            # Get the relative path of the current directory, and its depth from top dir
+            rel_path = os.path.relpath(root, self.top_dir)
+            depth = 0 if rel_path == '.' else len(rel_path.split(os.sep))
+            # Skip if its top two levels
+            if depth < 2:
+                if files:
+                    logging.debug(f'Importing KB - Skip files under "{rel_path}" since not reach chapter-depth yet.')
+                continue
+            # Replace os.sep('\') with '::' as deck's name
+            deck_name: str = rel_path.replace(os.sep, '::')
             logging.debug(f'Importing KB: under deck_name "{deck_name}"')
-
+            # Filter out hidden files
+            files = [f for f in files if not f.startswith('.')]
             for file in files:
                 # judge if a file is a Markdown (.md) file
                 if file.endswith('.md'):
@@ -114,9 +120,14 @@ class KB:
                     except KeyError:
                         joint = next(iter(self.joints.values()))
                     # logging.debug(f'Inside the directory a md file found: `{file}`')
-                    joint.join(str(os.path.join(root, file)), deck_name)
+                    joint.join(os.path.join(root, file), deck_name)
 
     def traverse_archive(self):
+        # todo traverse archive
+        pass
+
+    def archive(self, dir_path):
+        # todo archive a folder
         pass
 
     @staticmethod
