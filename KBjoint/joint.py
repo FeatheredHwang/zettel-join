@@ -10,7 +10,6 @@
 
 """
 
-
 import logging
 import os
 import re
@@ -284,6 +283,7 @@ class ClozeJoint(MdJoint):
         :param deck_name: deck name where to import notes to
         """
         self.make_soup(file)
+        new_notes_count: int = 0
 
         # Traverse every heading and create note for it
         for heading in self.soup.find_all(self.TRACEBACK_MAP.keys()):
@@ -322,12 +322,13 @@ class ClozeJoint(MdJoint):
             # add note to deck, and the note object will get assigned with id
             mw.col.add_note(note, deck_id)
             self.comment_noteid(heading, note.id)
-            self.new_notes_count += 1
+            new_notes_count += 1
             logging.info(f'Importing MD: Note added, note.id: {note.id}')
 
-        # Finally, refresh the source file with comment
-        self.write(file, self.content)
-        # TODO not write again if no comment added
+        # Finally, comment the source file if new-notes imported
+        if new_notes_count > 0:
+            self.new_notes_count = new_notes_count
+            self.write(file, self.content)
 
     def get_cloze_text(self, heading: Tag) -> (str, str):
         # Get cloze text, skip if empty
@@ -359,7 +360,7 @@ class ClozeJoint(MdJoint):
 
         return cloze_text, extra_text
 
-class OnesideJoint(MdJoint):
 
+class OnesideJoint(MdJoint):
     DEFAULT_NAME = 'Oneside'
     FILE_SUFFIX = 'oneside'
