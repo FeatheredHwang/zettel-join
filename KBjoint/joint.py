@@ -14,10 +14,9 @@ import logging
 import os
 import re
 
+from bs4 import BeautifulSoup, Tag, NavigableString, Comment
 # import markdown2 from the local libray, cause Anki doesn't include this module
 from .Lib import markdown2
-
-from bs4 import BeautifulSoup, Tag, NavigableString, Comment
 
 from anki.decks import DeckId
 from anki.models import ModelManager, NotetypeDict, TemplateDict, MODEL_CLOZE
@@ -35,7 +34,6 @@ HeadingRoot = dict[str, str]
 class MdJoint:
     """
     MdJoint is a model with join() function which import notes from markdown files.
-    # TODO Archive Anki Deck
     """
 
     DEFAULT_NAME: str = 'Basic'
@@ -187,11 +185,11 @@ class MdJoint:
         note_id = NoteId(m.group('note_id')) if m else None
         return note_id
 
-    def get_heading_soup(self, heading: Tag, subheading: bool = False) -> BeautifulSoup:
+    def get_heading_soup(self, heading: Tag, recursive: bool = False) -> BeautifulSoup:
         """
         find the content of heading
         :param heading:
-        :param subheading:
+        :param recursive:
         :return:
         """
         self.check_heading(heading)
@@ -199,8 +197,11 @@ class MdJoint:
         text: str = ''
         sibling = heading.find_next_sibling()  # Attention: .next_sibling might return NavigableString
         # todo include subheading
-        # if subheading:
-        while sibling and sibling.name not in self.HEADINGS and sibling.name != 'hr':
+        if recursive:
+            stop = self.HEADINGS[:self.HEADINGS.index(heading.name)+1]
+        else:
+            stop = self.HEADINGS
+        while sibling and sibling.name not in stop and sibling.name != 'hr':
             text += str(sibling)
             sibling = sibling.find_next_sibling()
         return BeautifulSoup(text, 'html.parser')
@@ -270,7 +271,6 @@ class ClozeJoint(MdJoint):
         t['afmt'] = self.read('templates/cloze_back.html')
         mm.addTemplate(m, t)
         m['css'] = self.read('templates/cloze.css')
-        # TODO delete all unnecessary lines that belong to TopicTree
 
         # Add the Model (NoteTypeDict) to Anki
         mm.add_dict(notetype=m)
