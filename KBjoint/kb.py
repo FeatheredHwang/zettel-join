@@ -4,7 +4,6 @@ Knowledge Base
 
 import logging
 import os
-import re
 
 from aqt import mw
 from aqt.qt import QFileDialog
@@ -75,52 +74,51 @@ class KB:
             return
         self.traverse()
         # Calculate how many cards imported
-        new_notes_count = sum(joint.new_notes_count for joint in self.joints.values())
-        logging.info(f'Importing KB: {new_notes_count} notes imported.\n')
+        new_notes_count: int = sum(joint.new_notes_count for joint in self.joints.values())
+        logging.info(f'KB join: {new_notes_count} notes imported.\n')
         showInfo(f'{new_notes_count} notes imported.')
         # With notes added, refresh the deck browser
         mw.deckBrowser.refresh()
-        # todo open the notesBrowser window, show the last added notes
+        # todo open the notesBrowser window, show the last added notes after kb-join
 
     def traverse(self):
         """
         Traverse the directory tree using os.walk()
         """
-        # todo: Popup a process bar to show the process
-        #   and stop user doing anything else before importation done.
-        # mw.progress.start(max=1, parent=mw)
-        # # Processing...
-        # mw.progress.update()
-        # mw.progress.finish()
-        # TODO using GitPython to monitor changes and record each file's notetype
         for root, dirs, files in os.walk(self.top_dir):
-            # Attention, dirs and files are just basename without path
+            # !Attention! dirs and files are just basename without path
             # Filter out hidden directories
             dirs[:] = [d for d in dirs if not d.startswith('.')]
             # Get the relative path of the current directory, and its depth from top dir
             rel_path = os.path.relpath(root, self.top_dir)
-            depth = 0 if rel_path == '.' else len(rel_path.split(os.sep))
-            # Skip if its top two levels
+            depth = 0 if rel_path == '.' else len(rel_path.split(os.sep))  # os.sep is '\'
+            # Skip to next folder if not reach chapter depth yet
             if depth < 2:
                 if files:
-                    logging.debug(f'Importing KB - Skip files under "{rel_path}" since not reach chapter-depth yet.')
+                    logging.debug(f'KB join - Skip files under "{rel_path}" since not reach chapter-depth yet.')
                 continue
-            # Replace os.sep('\') with '::' as deck's name
-            deck_name: str = rel_path.replace(os.sep, '::')
-            logging.debug(f'Importing KB: under deck_name "{deck_name}"')
+
             # Filter out hidden files
             files = [f for f in files if not f.startswith('.')]
+            # Find out files which is able to join
+            join_tasks: list[(str, str)] = []
             for file in files:
-                # judge if a file is a Markdown (.md) file
-                if file.endswith('.md'):
-                    suffix = self.get_suffix(file)
-                    joint: MdJoint
-                    try:
-                        joint = self.joints[suffix]
-                    except KeyError:
-                        joint = next(iter(self.joints.values()))
-                    # logging.debug(f'Inside the directory a md file found: `{file}`')
-                    joint.join(os.path.join(root, file), deck_name)
+                for suffix, joint in self.joints.items():
+                    if joint.check_feasible(file):
+                        join_tasks.append((joint.FILE_SUFFIX, file))
+            # Skip to next folder if no join-task exists
+            if not join_tasks:
+                logging.debug(f'KB join - Skip dir "{rel_path}" since no files to import here.')
+                continue
+
+            # join file to deck
+            deck_name: str = rel_path.replace(os.sep, '::')
+            logging.debug(f'KB join to the deck "{deck_name}"')
+            for suffix, file in join_tasks:
+                try:
+                    self.joints[suffix].join(os.path.join(root, file), deck_name)
+                except KeyError:
+                    logging.warning(f'KB join - unexpected joint-suffix "{suffix}" from file "{file}"')
 
     def traverse_archive(self):
         # todo traverse archive
@@ -129,40 +127,3 @@ class KB:
     def archive(self, dir_path):
         # todo archive a folder
         pass
-
-    @staticmethod
-    def get_suffix(file: str) -> str:
-        """
-        Return suffix in filename that shows which joint the file uses
-        :param file: filepath
-        :return: suffix str
-        """
-        m = re.fullmatch(
-            r'.+\[(?P<suffix>\w+)]\.\w+',
-            file
-        )
-        return m.group('suffix') if m else ''
-
-    @staticmethod
-    def remove_suffix(file: str) -> str:
-        """
-        Remove joint suffix in filename, and rename the file.
-        :param file: filepath
-        :return: filename with suffix removed
-        """
-        new_file = re.sub(r'\[\w+]', '', file)
-        os.rename(file, new_file)
-        return new_file
-
-    @staticmethod
-    def add_suffix(file: str, suffix: str) -> str:
-        """
-        Add/Replace joint suffix to filename, and rename the file.
-        :param file: filepath
-        :param suffix: joint suffix text
-        :return: filename with suffix added/replaced
-        """
-        name, ext = os.path.splitext(re.sub(r'\[\w+]', '', file))
-        new_file = f'{name}[{suffix}]{ext}'
-        os.rename(file, new_file)
-        return new_file
