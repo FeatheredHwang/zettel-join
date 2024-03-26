@@ -7,6 +7,7 @@
 # TODO support pictures
 # TODO markdown2 parser doesn't support latex
 # todo markdown2 parser doesn't support :star: (emoji)
+# TODO How to update the model? Using version to keep user's custom changes
 
 """
 
@@ -15,8 +16,9 @@ import os
 import re
 
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment
-# import markdown2 from the local libray, cause Anki doesn't include this module
-from .Lib import markdown2
+# todo import markdown from the local libray, cause Anki doesn't include this module
+import markdown
+from .lib.pymdownx import arithmatex
 
 from anki.decks import DeckId
 from anki.models import ModelManager, NotetypeDict, TemplateDict, MODEL_CLOZE
@@ -145,7 +147,7 @@ class MdJoint:
 
     def make_soup(self, file: str):
         self.content = self.read(file)
-        html = markdown2.markdown(self.content)
+        html = markdown.markdown(self.content, extensions=[arithmatex.ArithmatexExtension()])
         self.soup = BeautifulSoup(html, 'html.parser')
 
     def comment_noteid(self, heading: Tag, note_id: NoteId):
