@@ -1,0 +1,21 @@
+########################        Developing Environment          ########################
+
+# Anki’s bundled source code
+# - Mypy is essentially a Python linter on steroids,
+#     and it can catch many programming errors by analyzing your program, without actually having to run it.
+#   Mypy is required by Anki add-on development.
+# - aqt is Anki's qt interface
+mypy
+aqt[qt6]~=23.12.1
+anki~=23.12.1
+
+########################            Developing Tools            ########################
+
+# python-markdown is a text-to-HTML conversion tool for web writers.
+markdown
+# PyMdown Extensions is a collection of extensions for Python Markdown.
+#   They were originally written to make writing documentation more enjoyable.
+pymdown-extensions
+
+# Beautiful Soup is a library that makes it easy to scrape information from web pages.
+BeautifulSoup4~=4.12.3
