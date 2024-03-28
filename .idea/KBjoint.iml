@@ -7,5 +7,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="📌reference" />
+    <orderEntry type="module" module-name="KB-test" />
   </component>
 </module>

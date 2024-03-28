@@ -10,6 +10,7 @@ import markdown
 from KBjoint.kb import KB
 from .lib.pymdownx.arithmatex import ArithmatexExtension
 
+
 kb_dir = r'D:\Projects\.test\KB-test'
 
 
@@ -26,15 +27,15 @@ def reset_test_kb():
     # os.remove(file_to_delete)
 
 
-def remove_model():
+def remove_test_model():
     mm = mw.col.models
-    mm.remove(mm.id_for_name('Cloze (traceable)'))
+    mm.remove(mm.id_for_name('Cloze traceable (test)'))
 
 
 def output_model():
     # todo write to file rather than logging, do not use logging in test modules
     logging.info('\n' +
-                 str(mw.col.models.by_name('Cloze (traceable)'))
+                 str(mw.col.models.by_name('Cloze traceable (test)'))
                  )
 
 
@@ -43,8 +44,8 @@ def kb_join_test():
     Join your knowledge base to Anki
     """
     reset_test_kb()
-    remove_model()
-    KB(top_dir=kb_dir).join()
+    remove_test_model()
+    KB(top_dir=kb_dir, test_mode=True).join()
     # KB(top_dir=os.path.join(kb_dir, 'BlahBlah')).join()
 
 
@@ -68,27 +69,7 @@ def test_pymd_extension():
     logging.info(html)
 
 
-if __name__ != '__main__':
-    # gui_hooks.profile_did_open.append(output_model)
-    gui_hooks.profile_did_open.append(kb_join_test)
-    # gui_hooks.profile_did_open.append(test_pymd_extension)
+# gui_hooks.profile_did_open.append(output_model)
+gui_hooks.profile_did_open.append(kb_join_test)
+# gui_hooks.profile_did_open.append(test_pymd_extension)
 
-
-def transfer_mds_to_htmls():
-    if __name__ != '__main__':
-        return
-    for root, dirs, files in os.walk(kb_dir):
-        dirs[:] = [d for d in dirs if not d.startswith('.')]
-        files = [f for f in files if not f.startswith('.') and f.endswith('.md')]
-        for file in files:
-            with open(os.path.join(root, file), 'r', encoding='utf-8') as md_file:
-                # Read the entire content of the file
-                file_content = md_file.read()
-                print(f"File <{md_file}> read successfully")
-            html_content = markdown.markdown(file_content)
-            with open(os.path.join(root, file + '.html'), 'w', encoding='utf-8') as md_file:
-                md_file.write(html_content)
-
-
-if __name__ == '__main__':
-    transfer_mds_to_htmls()

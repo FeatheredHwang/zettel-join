@@ -14,7 +14,7 @@ anki~=23.12.1
 # python-markdown is a text-to-HTML conversion tool for web writers.
 markdown
 # PyMdown Extensions is a collection of extensions for Python Markdown.
-#   They were originally written to make writing documentation more enjoyable.
+# Documentation: https://facelessuser.github.io/pymdown-extensions/
 pymdown-extensions
 
 # Beautiful Soup is a library that makes it easy to scrape information from web pages.

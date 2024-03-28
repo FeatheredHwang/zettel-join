@@ -25,11 +25,29 @@ class KB:
     Knowledge Base
     """
     top_dir: str = ''
+    test_mode: bool = False
     joints: dict[str, MdJoint] = {}
 
-    def __init__(self, top_dir: str = None):
+    def __init__(self, top_dir: str = None, test_mode: bool = False):
         self.init_dir(top_dir)
+        self.test_mode = test_mode
+        # Add joints in this function, manually
         self.register_joints()
+
+    def register_joints(self):
+        if not self.top_dir:
+            return
+        # todo let user choose which joint works?
+        if not self.test_mode:
+            self.joints = {
+                ClozeJoint.FILE_SUFFIX: ClozeJoint(),
+                OnesideJoint.FILE_SUFFIX: OnesideJoint()
+            }
+        else:
+            self.joints = {
+                ClozeJoint.FILE_SUFFIX: ClozeJoint('Cloze traceable (test)'),
+                OnesideJoint.FILE_SUFFIX: OnesideJoint('Oneside (test)')
+            }
 
     def init_dir(self, top_dir: str = None):
         """
@@ -64,15 +82,6 @@ class KB:
         self.top_dir = top_dir
         # todo write config
         # todo make the dir root
-
-    def register_joints(self):
-        if not self.top_dir:
-            return
-        # todo let user choose which joint works?
-        self.joints = {
-            ClozeJoint.FILE_SUFFIX: ClozeJoint(),
-            OnesideJoint.FILE_SUFFIX: OnesideJoint()
-        }
 
     def join(self):
         """

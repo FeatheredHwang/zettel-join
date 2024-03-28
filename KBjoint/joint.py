@@ -9,6 +9,13 @@
 # TODO How to update the model? Using version to keep user's custom changes
 # todo what if no blank line before and after math blocks $$ signal? the render will return false result
 
+todo
+  folders inside the media folder are not supported.
+Folder: 国家教师资格考试(test)
+
+The following files are referenced by cards, but were not found in the media folder:
+Missing: 国家教师资格考试(test)\综合素质\equality_equity.png
+
 """
 
 import logging
@@ -18,6 +25,7 @@ import re
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment
 # todo import markdown from the local libray, cause Anki doesn't include this module
 import markdown
+# PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
 from .lib.pymdownx.arithmatex import Extension, ArithmatexExtension
 
 from anki.decks import DeckId
