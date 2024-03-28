@@ -5,9 +5,9 @@
 """
 
 # TODO support pictures
-# TODO markdown2 parser doesn't support latex
 # todo markdown2 parser doesn't support :star: (emoji)
 # TODO How to update the model? Using version to keep user's custom changes
+# todo what if no blank line before and after math blocks $$ signal? the render will return false result
 
 """
 
@@ -18,7 +18,7 @@ import re
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment
 # todo import markdown from the local libray, cause Anki doesn't include this module
 import markdown
-from .lib.pymdownx import arithmatex
+from .lib.pymdownx.arithmatex import Extension, ArithmatexExtension
 
 from anki.decks import DeckId
 from anki.models import ModelManager, NotetypeDict, TemplateDict, MODEL_CLOZE
@@ -45,6 +45,10 @@ class MdJoint:
     new_notes_count: int
     content: str
     soup: BeautifulSoup
+
+    pymd_config = {
+        'math': False
+    }
 
     HEADINGS: list[str] = [f'h{n}' for n in range(1, 7)]
 
@@ -147,7 +151,15 @@ class MdJoint:
 
     def make_soup(self, file: str):
         self.content = self.read(file)
-        html = markdown.markdown(self.content, extensions=[arithmatex.ArithmatexExtension()])
+        self.pymd_config['math'] = True if '$' in self.content else False
+        extensions: list[Extension] = []
+        if self.pymd_config['math']:
+            # todo create extension with config dictionary?
+            math_extension = ArithmatexExtension()
+            math_extension.config['preview'] = [False, ""]
+            math_extension.config['generic'] = [True, ""]
+            extensions.append(math_extension)
+        html = markdown.markdown(self.content, extensions=extensions)
         self.soup = BeautifulSoup(html, 'html.parser')
 
     def comment_noteid(self, heading: Tag, note_id: NoteId):
@@ -162,7 +174,7 @@ class MdJoint:
             self.content)
         # there must be two '\n' at the end of the pattern,
         #  or the comment will be parsed as part of next element in markdown2
-        logging.debug(f'NoteId commented after heading "{heading.text}".')
+        logging.debug(f'Importing MD - NoteId commented after heading "{heading.text}".')
 
     def get_commented_noteid(self, heading: Tag) -> NoteId:
         """
@@ -374,17 +386,19 @@ class ClozeJoint(MdJoint):
     def get_cloze_text(self, heading: Tag) -> (str, str):
         # Get cloze text, skip if empty
         heading_soup: BeautifulSoup = self.get_heading_soup(heading)
-        cloze_text: str = ''.join(str(tag) for tag in heading_soup.find_all(['p', 'ol', 'ul'], recursive=False))
+        cloze_text: str = ''.join(str(tag)
+                                  for tag in heading_soup.find_all(['p', 'ol', 'ul', 'div'], recursive=False))
         if not cloze_text:
             return '', ''
 
         # find all cloze-deletion, skip notes if empty
         cloze_soup: BeautifulSoup = BeautifulSoup(cloze_text, 'html.parser')
-        cloze_tags: list[Tag] = []
-        cloze_tags += cloze_soup.find_all('strong')
+        cloze_tags = cloze_soup.find_all('strong')
         cloze_tags += cloze_soup.select('li > p') if not cloze_tags else []
         cloze_tags += cloze_soup.select('li') if not cloze_tags else []
-        if not cloze_tags:
+        cloze_math_tags = cloze_soup.select('div.arithmatex') if self.pymd_config['math'] else []
+        logging.warning(cloze_soup.select('div.arithmatex'))
+        if not cloze_tags and not cloze_math_tags:
             return '', ''
 
         # cloze deletion - replace all cloze
@@ -394,7 +408,12 @@ class ClozeJoint(MdJoint):
             p = '({})'.format(cloze_tag.string)
             r = r'{{c%d::\1}}' % cloze_count
             cloze_text = re.sub(p, r, cloze_text)
-            # logging.debug('Text field after cloze-deletion: ' + note['Text'])
+        for cloze_math_tag in cloze_math_tags:
+            cloze_count += 1
+            math_string = cloze_math_tag.string[3:-3]
+            # to replace tex string we need to use replace otherwise '\' will be recognized as special sequence
+            cloze_text = cloze_text.replace(math_string, r'{{c%d:: %s }}' % (cloze_count, math_string))
+        # logging.debug('Text field after cloze-deletion: ' + cloze_text)
 
         # Get Extra text
         extra_text: str = ''.join(str(tag) for tag in heading_soup.find_all('blockquote', recursive=False))
