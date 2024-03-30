@@ -13,10 +13,9 @@
 """
 
 import logging
-import os
+import os, shutil
 import re
 
-from shutil import copyfile
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment
 import markdown
 # import PyMdown Extensions (pymdownx) from the local libray, cause Anki doesn't include this module
@@ -135,6 +134,7 @@ class MdJoint:
         :param soup: the BeautifulSoup that contains img tags
         """
         # todo Anki supports jpg better than png
+        # todo resize picture
         img_tags = soup.find_all('img')
         for img_tag in img_tags:
             src = img_tag.get('src', '')
@@ -151,12 +151,12 @@ class MdJoint:
             # create a copy with standardized name
             std_name = '.'.join(self.handling_deck.split(sep='::') + [img_name])
             std_img = os.path.join(os.path.dirname(img), std_name)
-            copyfile(img, std_img)
+            shutil.copyfile(img, std_img)
             # modify 'src' attribute of <img> tag
             img_tag['src'] = std_name
-            # add image to media folder, which could be found at `%APPDATA%\Anki2`
-            mw.col.media.addFile(std_img)
-            # todo what if duplicated image name? Anki will create a name like '竹子-d604e535bfcb0573c3211c99815d8207cab6a054'
+            # Anki will Add basename of path to the media folder, renaming if not unique
+            # which could be found under `%APPDATA%\Anki2`
+            if not mw.col.media.have(std_name): mw.col.media.addFile(std_img)
 
     @staticmethod
     def read(file: str) -> str:
