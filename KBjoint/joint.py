@@ -4,7 +4,6 @@
 
 """
 
-# TODO support pictures
 # todo markdown2 parser doesn't support :star: (emoji)
 # TODO How to update the model? Using version to keep user's custom changes
 # todo what if no blank line before and after math blocks $$ signal? the render will return false result
@@ -137,16 +136,20 @@ class MdJoint:
         # todo resize picture
         img_tags = soup.find_all('img')
         for img_tag in img_tags:
-            src = img_tag.get('src', '')
-            if not 'src': continue
-            # todo logging, and add warning error to a 'warnings' list
+            src = img_tag.get('src', None)
+            # continue if src attribute missing
+            if not src:
+                logging.debug(f'Importing MD - add img failed, src attr missing "{src}"')
+                continue
+            # todo what if src is weblink
             if not os.path.isabs(src):
                 os.chdir(os.path.dirname(self.handling_file))
                 img = os.path.abspath(src)  # img path
             else: img = src
             # continue if file not exist
-            if not os.path.exists(img): continue
-            # todo logging, and add warning error to a 'warnings' list
+            if not os.path.exists(img):
+                logging.debug(f'Importing MD - add img failed, file not exist "{img}"')
+                continue
             img_name = os.path.basename(img)
             # create a copy with standardized name
             std_name = '.'.join(self.handling_deck.split(sep='::') + [img_name])
@@ -154,9 +157,12 @@ class MdJoint:
             shutil.copyfile(img, std_img)
             # modify 'src' attribute of <img> tag
             img_tag['src'] = std_name
-            # Anki will Add basename of path to the media folder, renaming if not unique
+            # Anki will add basename of path to the media folder, renaming if not unique
             # which could be found under `%APPDATA%\Anki2`
             if not mw.col.media.have(std_name): mw.col.media.addFile(std_img)
+            logging.debug(f'Importing MD - add img success, img path "{std_name}"')
+            # delete copied file
+            os.remove(std_img)
 
     @staticmethod
     def read(file: str) -> str:
