@@ -62,6 +62,16 @@ blockquote {
   margin-inline-end: 0;
 }
 
+.q blockquote {
+  /* hide blockquote tag in question/front page */
+  display: None;
+}
+
+.a blockquote {
+  /* show blockquote tag in answer/back page */
+  display: Block
+}
+
 /* heading elements */
 
 h1,
@@ -99,7 +109,7 @@ li blockquote{
 
 
 
-/* generic block-level elements */
+/* generic inline-level elements */
 
 strong,
 b {
@@ -109,7 +119,8 @@ b {
 
 
 
-/* cloze */
+/* cloze deletion*/
+
 .cloze {
   font-weight: Bold;
   font-size: 1.2rem;
