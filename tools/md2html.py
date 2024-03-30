@@ -1,10 +1,26 @@
 import os
 import markdown
 
-kb_dir = r'/'
+from markdown import Extension
+from pymdownx.emoji import EmojiExtension, to_alt
+from pymdownx.arithmatex import ArithmatexExtension
 
 
 def transfer_mds_to_htmls():
+    kb_dir = r'D:\Projects\.test\KB-test'
+
+    extensions: list[Extension] = []
+
+    # add emoji extension
+    emoji_extension = EmojiExtension()
+    emoji_extension.config['emoji_generator'] = [to_alt, '']
+    extensions.append(emoji_extension)
+    # add math extension
+    math_extension = ArithmatexExtension()
+    math_extension.config['preview'] = [False, ""]
+    math_extension.config['generic'] = [True, ""]
+    extensions.append(math_extension)
+
     print(kb_dir)
     for root, dirs, files in os.walk(kb_dir):
         print(root)

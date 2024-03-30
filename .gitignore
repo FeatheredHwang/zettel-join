@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/  # include 3rd-party library since Anki doesn't include them by default
 lib64/
 parts/
 sdist/

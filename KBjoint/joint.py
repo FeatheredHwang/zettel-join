@@ -4,7 +4,7 @@
 
 """
 
-# todo markdown2 parser doesn't support :star: (emoji)
+# todo markdown parser doesn't support :star: (emoji)
 # TODO How to update the model? Using version to keep user's custom changes
 # todo what if no blank line before and after math blocks $$ signal? the render will return false result
 # todo standard md file: no blank line inside list, even between p and blockquote tags inside li
@@ -19,7 +19,9 @@ from bs4 import BeautifulSoup, Tag, NavigableString, Comment
 import markdown
 # import PyMdown Extensions (pymdownx) from the local libray, cause Anki doesn't include this module
 # PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
-from .lib.pymdownx.arithmatex import Extension, ArithmatexExtension
+from markdown import Extension
+from .lib.pymdownx.arithmatex import ArithmatexExtension
+from .lib.pymdownx.emoji import EmojiExtension, to_alt
 
 from anki.decks import DeckId
 from anki.models import ModelManager, NotetypeDict, TemplateDict, MODEL_CLOZE
@@ -200,14 +202,21 @@ class MdJoint:
 
     def make_soup(self, file: str):
         self.content = self.read(file)
-        self.pymdx_config['math'] = True if '$' in self.content else False
         extensions: list[Extension] = []
+
+        # add emoji extension
+        emoji_extension = EmojiExtension()
+        emoji_extension.config['emoji_generator'] = [to_alt, '']
+        extensions.append(emoji_extension)
+        # add math extension
+        self.pymdx_config['math'] = True if '$' in self.content else False
         if self.pymdx_config['math']:
             # todo create extension with config dictionary?
             math_extension = ArithmatexExtension()
             math_extension.config['preview'] = [False, ""]
             math_extension.config['generic'] = [True, ""]
             extensions.append(math_extension)
+
         html = markdown.markdown(self.content, extensions=extensions)
         self.soup = BeautifulSoup(html, 'html.parser')
 
