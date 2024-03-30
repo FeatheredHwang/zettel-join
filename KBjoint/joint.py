@@ -8,6 +8,7 @@
 # TODO How to update the model? Using version to keep user's custom changes
 # todo what if no blank line before and after math blocks $$ signal? the render will return false result
 # todo standard md file: no blank line inside list, even between p and blockquote tags inside li
+#   todo not allow bloquote inside another blockquote
 
 """
 
@@ -414,7 +415,7 @@ class ClozeJoint(MdJoint):
                 continue
 
             # check if heading has cloze-deletion
-            cloze_text = self.get_cloze_text(heading)
+            cloze_text, extra_text = self.get_cloze_text(heading)
             if not cloze_text:
                 logging.debug(f'Importing MD - cloze-deletion not found, skip: "{root_str}"')
                 continue
@@ -424,6 +425,7 @@ class ClozeJoint(MdJoint):
             note = Note(mw.col, mw.col.models.byName(self.model_name))
             note['root'] = root_str
             note['Text'] = cloze_text
+            note['Extra'] = extra_text
             for key, value in heading_root.items():
                 note[self.TRACEBACK_FIELDS_MAP[key]] = value
             if '⭐' in note['root']:  # re.search also works, but re.match doesn't
@@ -443,7 +445,7 @@ class ClozeJoint(MdJoint):
 
         self.finish_join()
 
-    def get_cloze_text(self, heading: Tag) -> str:
+    def get_cloze_text(self, heading: Tag) -> (str, str):
         """
         Analyse the heading's content, get 'cloze' and 'extra' fields' value as plain text (raw html text).
         :param heading: heading tag
@@ -451,16 +453,19 @@ class ClozeJoint(MdJoint):
         """
         # Get cloze text, skip if empty
         heading_soup: BeautifulSoup = self.get_heading_soup(heading)
-        # Find all tags except <p> and <ol> and delete them
-        for bq_tag in heading_soup.find_all(True, recursive=False):
-            if bq_tag.name == 'div' and 'arithmatex' not in bq_tag.get('class', []):
-                    bq_tag.decompose()
-            elif bq_tag.name not in ['p', 'ol', 'ul', 'div', 'blockquote']:
-                bq_tag.decompose()
-        if not heading_soup: return ''
+        # Find all tags and delete the unexpected
+        #   extract the blockquote tags to extra_text
+        extra_text = ''
+        for tag in heading_soup.find_all(True, recursive=False):
+            if tag.name =='blockquote':
+                extra_text += str(tag.extract())
+            elif tag.name == 'div' and 'arithmatex' not in tag.get('class', []):
+                    tag.decompose()
+            elif tag.name not in ['p', 'ol', 'ul', 'div', 'blockquote']:
+                tag.decompose()
+        if not heading_soup: return '', ''
 
         # replace blockquote with the placeholder
-        # todo not allow bloquote inside another blockquote
         blockquote_tags = heading_soup.find_all('blockquote', recursive= True)
         ph_count = 0
         for bq_tag in blockquote_tags:
@@ -475,7 +480,7 @@ class ClozeJoint(MdJoint):
         cloze_tags += heading_soup.select('li') if not cloze_tags else []
         # todo rename the class attribute to 'math'
         cloze_math_tags = heading_soup.select('div.arithmatex') if self.pymdx_config['math'] else []
-        if not cloze_tags and not cloze_math_tags: return ''
+        if not cloze_tags and not cloze_math_tags: return '', ''
 
         # cloze deletion
         cloze_count = 0
@@ -498,7 +503,7 @@ class ClozeJoint(MdJoint):
         self.join_img(heading_soup)
 
         # logging.debug('Text field after cloze-deletion: ' + str(heading_soup))
-        return str(heading_soup)
+        return str(heading_soup), extra_text
 
 
 class OnesideJoint(MdJoint):
