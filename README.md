@@ -5,9 +5,24 @@ Join/Import your knowledge base (majorly md files) into Anki Notes
 Features:
 
 1. support markdown files (Typora-flavour preferred)
-   - support Math Blocks indicated by '$$'
+2. support Math Blocks indicated by '$$', which will be added to cloze deletion.
+3. support Images which is stored locally and will be added to media folder.
 
 ## Develop Guide
+
+### Develop Environment
+
+- Windows 11
+- Python 3.11
+- Anki 23.12.1
+- IDE: Pycharm
+
+### File Location
+
+  Q: Where can I find the Anki files?
+  A: in your appdata folder. Try typing `%APPDATA%\Anki2` in the location field.
+
+### Python and Pip
 
 Upgrade pip
 
@@ -15,7 +30,7 @@ Upgrade pip
 python.exe -m pip install --upgrade pip
 ```
 
-Use domestic source to improve download speed.
+Use domestic source to improve download speed (if you live in China)
 
 ```batch
 pip3 install -i https://mirrors.aliyun.com/pypi/simple -r requirements.txt
@@ -31,11 +46,24 @@ inspired by [Files](https://github.com/files-community/Files) project.
 1. Features
 2. Fix
 3. Code Quality
-4. Library
+4. Doc
 5. Github
 6. IDEA
 
 ### Mistakes I've made
+
+#### mw is None before profile-loaded
+
+Error Example
+```python
+from aqt import mw
+
+mm = mw.col.models
+```
+this will return:
+```
+AttributeError: 'NoneType' object has no attribute 'models'
+```
 
 #### To connect the function to QAction
 
@@ -83,9 +111,9 @@ will get deleted.
 <br>The Python-Markdown documentation 
 explains how to use extensions:
 > The list of extensions may contain instances of extensions and/or strings of extension names.
-> 
+>
 > `extensions=[MyExtension(), "path.to.my.ext"]`
-> 
+>
 > The preferred method is to pass in an instance of an extension. 
 > Strings should only be used when it is **impossible**
 > to import the Extension Class directly (from the command line or in a template).
