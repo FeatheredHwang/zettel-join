@@ -212,7 +212,7 @@ class MdJoint:
         :param note_id:
         """
         self.content = re.sub(
-            r'(\n#+\s*{}\s*\n\n)'.format(heading.text),
+            r'(\n*#+\s*{}\s*\n\n)'.format(heading.text),
             r'\1' + f'<!-- NoteId: {note_id} -->\n\n',
             self.content)
         # there must be two '\n' at the end of the pattern,
