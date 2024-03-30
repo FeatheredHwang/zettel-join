@@ -55,7 +55,7 @@ class MdJoint:
     soup: BeautifulSoup
 
     pymd_config = {
-        'math': False
+        'math': True
     }
 
     HEADINGS: list[str] = [f'h{n}' for n in range(1, 7)]
@@ -295,7 +295,7 @@ class ClozeJoint(MdJoint):
         'Text',
         'Extra',
     ]
-    TRACEBACK_MAP: HeadingRoot = {
+    TRACEBACK_FIELDS_MAP: HeadingRoot = {
         'h1': 'Chapter',
         'h2': 'Section',
         'h3': 'Subsection',
@@ -319,7 +319,7 @@ class ClozeJoint(MdJoint):
             mm.addField(m, fld)
         mm.set_sort_index(m, self.NORMAL_FIELDS.index('root'))
 
-        for fld_name in self.TRACEBACK_MAP.values():
+        for fld_name in self.TRACEBACK_FIELDS_MAP.values():
             fld = mm.newField(fld_name)
             fld['plainText'] = True
             fld['collapsed'] = True
@@ -347,7 +347,7 @@ class ClozeJoint(MdJoint):
         new_notes_count: int = 0
 
         # Traverse every heading and create note for it
-        for heading in self.soup.find_all(self.TRACEBACK_MAP.keys()):
+        for heading in self.soup.find_all(self.TRACEBACK_FIELDS_MAP.keys()):
 
             # get heading_root
             heading_root: HeadingRoot = self.get_heading_root(heading)
@@ -360,7 +360,7 @@ class ClozeJoint(MdJoint):
                 continue
 
             # check if heading has cloze-deletion
-            cloze_text, extra_text = self.get_cloze_text(heading)
+            cloze_text = self.get_cloze_text(heading)
             if not cloze_text:
                 logging.debug(f'Importing MD - cloze-deletion not found, skip: "{root_str}"')
                 continue
@@ -370,9 +370,8 @@ class ClozeJoint(MdJoint):
             note = Note(mw.col, mw.col.models.byName(self.model_name))
             note['root'] = root_str
             note['Text'] = cloze_text
-            note['Extra'] = extra_text
             for key, value in heading_root.items():
-                note[self.TRACEBACK_MAP[key]] = value
+                note[self.TRACEBACK_FIELDS_MAP[key]] = value
             if '⭐' in note['root']:  # re.search also works, but re.match doesn't
                 note.tags.append('marked')
             # todo what about user-defined tags
@@ -391,42 +390,61 @@ class ClozeJoint(MdJoint):
             self.new_notes_count += new_notes_count
             self.write(file, self.content)
 
-    def get_cloze_text(self, heading: Tag) -> (str, str):
+    def get_cloze_text(self, heading: Tag) -> str:
+        """
+        Analyse the heading's content, get 'cloze' and 'extra' fields' value as plain text (raw html text).
+        :param heading: heading tag
+        :return: 'cloze' and 'extra' fields' plain text
+        """
         # Get cloze text, skip if empty
         heading_soup: BeautifulSoup = self.get_heading_soup(heading)
-        cloze_text: str = ''.join(str(tag)
-                                  for tag in heading_soup.find_all(['p', 'ol', 'ul', 'div'], recursive=False))
-        if not cloze_text:
-            return '', ''
+        # Find all tags except <p> and <ol> and delete them
+        for bq_tag in heading_soup.find_all(True, recursive=False):
+            if bq_tag.name == 'div':
+                if 'class' not in bq_tag.attrs or 'arithmatex' not in bq_tag.get('class', []):
+                    bq_tag.decompose()
+            elif bq_tag.name not in ['p', 'ol', 'ul', 'div', 'blockquote']:
+                bq_tag.decompose()
+        if not heading_soup: return ''
 
-        # find all cloze-deletion, skip notes if empty
-        cloze_soup: BeautifulSoup = BeautifulSoup(cloze_text, 'html.parser')
-        cloze_tags = cloze_soup.find_all('strong')
-        cloze_tags += cloze_soup.select('li > p') if not cloze_tags else []
-        cloze_tags += cloze_soup.select('li') if not cloze_tags else []
-        cloze_math_tags = cloze_soup.select('div.arithmatex') if self.pymd_config['math'] else []
-        logging.warning(cloze_soup.select('div.arithmatex'))
-        if not cloze_tags and not cloze_math_tags:
-            return '', ''
+        # replace blockquote with the placeholder
+        # todo not allow bloquote inside another blockquote
+        blockquote_tags = heading_soup.find_all('blockquote', recursive= True)
+        ph_count = 0
+        for bq_tag in blockquote_tags:
+            ph_tag = heading_soup.new_tag('blockquote')
+            ph_count += 1
+            ph_tag['id'] = f'placeholder-{ph_count}'
+            bq_tag.replace_with(ph_tag)
 
-        # cloze deletion - replace all cloze
+        # find all cloze-deletion, avoid including child tag, skip notes if empty
+        cloze_tags = heading_soup.find_all('strong')
+        cloze_tags += heading_soup.select('li > p') if not cloze_tags else []
+        cloze_tags += heading_soup.select('li') if not cloze_tags else []
+        # todo rename the class attribute to 'math'
+        cloze_math_tags = heading_soup.select('div.arithmatex') if self.pymd_config['math'] else []
+        logging.warning(heading_soup.select('div.arithmatex'))
+        if not cloze_tags and not cloze_math_tags: return ''
+
+        # cloze deletion
         cloze_count = 0
         for cloze_tag in cloze_tags:
             cloze_count += 1
-            p = '({})'.format(cloze_tag.string)
-            r = r'{{c%d::\1}}' % cloze_count
-            cloze_text = re.sub(p, r, cloze_text)
-        for cloze_math_tag in cloze_math_tags:
-            cloze_count += 1
-            math_string = cloze_math_tag.string[3:-3]
-            # to replace tex string we need to use replace otherwise '\' will be recognized as special sequence
-            cloze_text = cloze_text.replace(math_string, r'{{c%d:: %s }}' % (cloze_count, math_string))
-        # logging.debug('Text field after cloze-deletion: ' + cloze_text)
+            cloze_tag.string = '{{c' + str(cloze_count) + '::' + cloze_tag.string + '}}'
+        if self.pymd_config['math']:
+            for cloze_math_tag in cloze_math_tags:
+                cloze_count += 1
+                cloze_math_tag.string = '\\[\n{{c' + str(cloze_count) + ':: ' + cloze_math_tag.string[3:-3] + ' }}\n\\]'
 
-        # Get Extra text
-        extra_text: str = ''.join(str(tag) for tag in heading_soup.find_all('blockquote', recursive=False))
+        # replace blockquote with the orginal
+        ph_count = 0
+        for bq_tag in blockquote_tags:
+            ph_count += 1
+            ph_tag = heading_soup.select_one(f'blockquote#placeholder-{ph_count}')
+            ph_tag.replace_with(bq_tag)
 
-        return cloze_text, extra_text
+        # logging.debug('Text field after cloze-deletion: ' + str(heading_soup))
+        return str(heading_soup)
 
 
 class OnesideJoint(MdJoint):
