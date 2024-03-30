@@ -23,18 +23,20 @@ def transfer_mds_to_htmls():
 
     print(kb_dir)
     for root, dirs, files in os.walk(kb_dir):
-        print(root)
-        dirs[:] = [d for d in dirs if not d.startswith('.')]
+        # print(root, dirs, files)
+        # dirs[:] = [d for d in dirs if not d.startswith('.')]
         files = [f for f in files if not f.startswith('.') and f.endswith('.md')]
-        for file in files:
-            print(file)
-            with open(os.path.join(root, file), 'r', encoding='utf-8') as md_file:
-                # Read the entire content of the file
-                file_content = md_file.read()
-                print(f"File <{md_file}> read successfully")
-            html_content = markdown.markdown(file_content)
-            with open(os.path.join(root, file + '.html'), 'w', encoding='utf-8') as md_file:
-                md_file.write(html_content)
+        if root.endswith('.backup'):
+            for file in files:
+                print(file)
+                with open(os.path.join(root, file), 'r', encoding='utf-8') as md_file:
+                    # Read the entire content of the file
+                    file_content = md_file.read()
+                    print(f"File <{os.path.join(root, file)}> read successfully")
+                html_content = markdown.markdown(file_content, extensions=extensions)
+                with open(os.path.join(root, file + '.html'), 'w', encoding='utf-8') as md_file:
+                    md_file.write(html_content)
+                    print(f"File <{os.path.join(root, file + '.html')}> write successfully")
 
 
 if __name__ == '__main__':
