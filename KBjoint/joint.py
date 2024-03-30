@@ -8,13 +8,7 @@
 # todo markdown2 parser doesn't support :star: (emoji)
 # TODO How to update the model? Using version to keep user's custom changes
 # todo what if no blank line before and after math blocks $$ signal? the render will return false result
-
-todo
-  folders inside the media folder are not supported.
-Folder: 国家教师资格考试(test)
-
-The following files are referenced by cards, but were not found in the media folder:
-Missing: 国家教师资格考试(test)\综合素质\equality_equity.png
+# todo standard md file: no blank line inside list, even between p and blockquote tags inside li
 
 """
 
@@ -22,9 +16,10 @@ import logging
 import os
 import re
 
+from shutil import copyfile
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment
-# todo import markdown from the local libray, cause Anki doesn't include this module
 import markdown
+# import PyMdown Extensions (pymdownx) from the local libray, cause Anki doesn't include this module
 # PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
 from .lib.pymdownx.arithmatex import Extension, ArithmatexExtension
 
@@ -37,10 +32,6 @@ from aqt import mw
 HeadingRoot = dict[str, str]
 
 
-# mm: ModelManager = mw.col.models  # AttributeError: 'NoneType' object has no attribute 'models'
-#   mw is None before profile-loaded
-
-
 class MdJoint:
     """
     MdJoint is a model with join() function which import notes from markdown files.
@@ -50,17 +41,20 @@ class MdJoint:
     FILE_SUFFIX: str = 'basic'
 
     model_name: str
+    handling_file: str
+    handling_deck: str
     new_notes_count: int
     content: str
     soup: BeautifulSoup
 
-    pymd_config = {
-        'math': True
+    pymdx_config = {
+        # 'img': False,
+        'math': False
     }
 
     HEADINGS: list[str] = [f'h{n}' for n in range(1, 7)]
 
-    def __init__(self, model_name: str = DEFAULT_NAME):
+    def __init__(self, model_name=DEFAULT_NAME):
         # Using model manager is the only way to add new model
         self.model_name = model_name
         self.new_notes_count = 0
@@ -114,14 +108,55 @@ class MdJoint:
             return True
         return False
 
-    def join(self, file: str, deck_name: str):
+    def join(self, file: str, deck_name: str = None):
         """
         Parse the file content, map them on the model,
         then add/join them to collection.
         :param file: filepath of the kb md-format file
         :param deck_name: deck name where to import notes to
         """
+        self.start_join(file, deck_name)
         pass
+
+    def start_join(self, file: str, deck_name: str = None):
+        if not deck_name: self.handling_deck = 'Default'
+        else: self.handling_deck = deck_name
+        self.handling_file = file
+
+    def finish_join(self):
+        self.handling_deck = ''
+        self.handling_file = ''
+
+    def join_img(self, soup: BeautifulSoup):
+        """
+        Since folders inside the media folder are not supported,
+        import img file directly to media folder with standard name,
+        and modify 'src' attribute of <img> tag to filename
+        :param soup: the BeautifulSoup that contains img tags
+        """
+        # todo Anki supports jpg better than png
+        img_tags = soup.find_all('img')
+        for img_tag in img_tags:
+            src = img_tag.get('src', '')
+            if not 'src': continue
+            # todo logging, and add warning error to a 'warnings' list
+            if not os.path.isabs(src):
+                os.chdir(os.path.dirname(self.handling_file))
+                img = os.path.abspath(src)  # img path
+            else: img = src
+            # continue if file not exist
+            if not os.path.exists(img): continue
+            # todo logging, and add warning error to a 'warnings' list
+            img_name = os.path.basename(img)
+            # create a copy with standardized name
+            std_name = '.'.join(self.handling_deck.split(sep='::') + [img_name])
+            std_img = os.path.join(os.path.dirname(img), std_name)
+            copyfile(img, std_img)
+            # modify 'src' attribute of <img> tag
+            img_tag['src'] = std_name
+            # add image to media folder, which could be found at `%APPDATA%\Anki2`
+            mw.col.media.addFile(std_img)
+            # todo what if duplicated image name? Anki will create a name like '竹子-d604e535bfcb0573c3211c99815d8207cab6a054'
 
     @staticmethod
     def read(file: str) -> str:
@@ -159,9 +194,9 @@ class MdJoint:
 
     def make_soup(self, file: str):
         self.content = self.read(file)
-        self.pymd_config['math'] = True if '$' in self.content else False
+        self.pymdx_config['math'] = True if '$' in self.content else False
         extensions: list[Extension] = []
-        if self.pymd_config['math']:
+        if self.pymdx_config['math']:
             # todo create extension with config dictionary?
             math_extension = ArithmatexExtension()
             math_extension.config['preview'] = [False, ""]
@@ -336,16 +371,20 @@ class ClozeJoint(MdJoint):
         # Add the Model (NoteTypeDict) to Anki
         mm.add_dict(notetype=m)
 
-    def join(self, file: str, deck_name: str):
+    def join(self, file: str, deck_name: str = None):
         """
         Parse the file content, map them on the model,
         then add/join them to collection.
         :param file: filepath of the kb md-format file
         :param deck_name: deck name where to import notes to
         """
+        self.start_join(file, deck_name)
+
+        # find deck or create if not exist
+        deck_id: DeckId = mw.col.decks.id(deck_name)
+
         self.make_soup(file)
         new_notes_count: int = 0
-
         # Traverse every heading and create note for it
         for heading in self.soup.find_all(self.TRACEBACK_FIELDS_MAP.keys()):
 
@@ -376,9 +415,6 @@ class ClozeJoint(MdJoint):
                 note.tags.append('marked')
             # todo what about user-defined tags
 
-            # find deck or create if not exist
-            deck_id: DeckId = mw.col.decks.id(deck_name)
-
             # add note to deck, and the note object will get assigned with id
             mw.col.add_note(note, deck_id)
             self.comment_noteid(heading, note.id)
@@ -390,6 +426,8 @@ class ClozeJoint(MdJoint):
             self.new_notes_count += new_notes_count
             self.write(file, self.content)
 
+        self.finish_join()
+
     def get_cloze_text(self, heading: Tag) -> str:
         """
         Analyse the heading's content, get 'cloze' and 'extra' fields' value as plain text (raw html text).
@@ -400,8 +438,7 @@ class ClozeJoint(MdJoint):
         heading_soup: BeautifulSoup = self.get_heading_soup(heading)
         # Find all tags except <p> and <ol> and delete them
         for bq_tag in heading_soup.find_all(True, recursive=False):
-            if bq_tag.name == 'div':
-                if 'class' not in bq_tag.attrs or 'arithmatex' not in bq_tag.get('class', []):
+            if bq_tag.name == 'div' and 'arithmatex' not in bq_tag.get('class', []):
                     bq_tag.decompose()
             elif bq_tag.name not in ['p', 'ol', 'ul', 'div', 'blockquote']:
                 bq_tag.decompose()
@@ -422,8 +459,7 @@ class ClozeJoint(MdJoint):
         cloze_tags += heading_soup.select('li > p') if not cloze_tags else []
         cloze_tags += heading_soup.select('li') if not cloze_tags else []
         # todo rename the class attribute to 'math'
-        cloze_math_tags = heading_soup.select('div.arithmatex') if self.pymd_config['math'] else []
-        logging.warning(heading_soup.select('div.arithmatex'))
+        cloze_math_tags = heading_soup.select('div.arithmatex') if self.pymdx_config['math'] else []
         if not cloze_tags and not cloze_math_tags: return ''
 
         # cloze deletion
@@ -431,7 +467,7 @@ class ClozeJoint(MdJoint):
         for cloze_tag in cloze_tags:
             cloze_count += 1
             cloze_tag.string = '{{c' + str(cloze_count) + '::' + cloze_tag.string + '}}'
-        if self.pymd_config['math']:
+        if self.pymdx_config['math']:
             for cloze_math_tag in cloze_math_tags:
                 cloze_count += 1
                 cloze_math_tag.string = '\\[\n{{c' + str(cloze_count) + ':: ' + cloze_math_tag.string[3:-3] + ' }}\n\\]'
@@ -442,6 +478,9 @@ class ClozeJoint(MdJoint):
             ph_count += 1
             ph_tag = heading_soup.select_one(f'blockquote#placeholder-{ph_count}')
             ph_tag.replace_with(bq_tag)
+
+        # Add image files to media
+        self.join_img(heading_soup)
 
         # logging.debug('Text field after cloze-deletion: ' + str(heading_soup))
         return str(heading_soup)
