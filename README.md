@@ -21,13 +21,19 @@ Use domestic source to improve download speed.
 pip3 install -i https://mirrors.aliyun.com/pypi/simple -r requirements.txt
 ```
 
+### Git
 
-### Develop Environment
+#### Commit Name Rules
 
-- Windows 11
-- Python 3.11
-- Anki 23.12.1
-- IDE: Pycharm
+Here is a list of keywords that classify commit types, 
+inspired by [Files](https://github.com/files-community/Files) project.
+
+1. Features
+2. Fix
+3. Code Quality
+4. Library
+5. Github
+6. IDEA
 
 ### Mistakes I've made
 
