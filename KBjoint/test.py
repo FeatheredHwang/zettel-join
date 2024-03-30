@@ -7,22 +7,24 @@ from aqt import mw
 
 import markdown
 
-from KBjoint.kb import KB
+from KBjoint.kb import KnowledgeBase
 from .lib.pymdownx.arithmatex import ArithmatexExtension
 
 
-kb_dir = r'D:\Projects\.test\KB-test'
+test_mode: bool = True
+test_kb_dir = r'D:\Projects\.test\KB-test'
 
 
 def reset_test_kb():
-    for root, dirs, files in os.walk(kb_dir):
+    for root, dirs, files in os.walk(test_kb_dir):
         if root.endswith('.backup'):
             for file in files:
                 # Copy a file, replace if destination file already exist
-                shutil.copy(
-                    os.path.join(root, file),
-                    os.path.join(os.path.dirname(root), file)
-                )
+                if file.endswith('.md'):
+                    shutil.copy(
+                        os.path.join(root, file),
+                        os.path.join(os.path.dirname(root), file)
+                    )
     # Delete a file
     # os.remove(file_to_delete)
 
@@ -45,7 +47,7 @@ def kb_join_test():
     """
     reset_test_kb()
     remove_test_model()
-    KB(top_dir=kb_dir, test_mode=True).join()
+    KnowledgeBase(top_dir=test_kb_dir, test_mode=test_mode).join()
     # KB(top_dir=os.path.join(kb_dir, 'BlahBlah')).join()
 
 
