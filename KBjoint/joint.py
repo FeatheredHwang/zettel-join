@@ -263,19 +263,22 @@ class MdJoint:
         """
         find the content of heading
         :param heading:
-        :param recursive:
+        :param recursive: if True, include subheadings with their content
         :return:
         """
-        self.check_heading(heading)
-
-        text: str = ''
-        sibling = heading.find_next_sibling()  # Attention: .next_sibling might return NavigableString
-        # todo include subheading
+        if heading.name not in self.HEADINGS:
+            raise ValueError(f'heading tag supposed, but <{heading.name}> tag get')
+            return
         if recursive:
             stop = self.HEADINGS[:self.HEADINGS.index(heading.name) + 1]
         else:
             stop = self.HEADINGS
-        while sibling and sibling.name not in stop and sibling.name != 'hr':
+        # add <hr> tag as its stop tag
+        stop.append('hr')
+
+        text: str = ''
+        sibling = heading.find_next_sibling()  # Attention: .next_sibling might return NavigableString
+        while sibling and sibling.name not in stop:
             text += str(sibling)
             sibling = sibling.find_next_sibling()
         return BeautifulSoup(text, 'html.parser')
