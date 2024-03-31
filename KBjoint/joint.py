@@ -241,16 +241,11 @@ class MdJoint:
         :param heading:
         :return:
         """
-        self.check_heading(heading)
-
         comm = heading.next_sibling
         while comm and isinstance(comm, NavigableString):
-            if isinstance(comm, Comment):
-                break
-            else:
-                comm = comm.next_sibling
-        else:
-            return NoteId(0)
+            if isinstance(comm, Comment): break
+            else: comm = comm.next_sibling
+        else: return NoteId(0)
         m = re.fullmatch(
             r'\s*NoteId:\s*(?P<note_id>[0-9]{13})\s*',
             comm,
@@ -284,8 +279,6 @@ class MdJoint:
         return BeautifulSoup(text, 'html.parser')
 
     def get_heading_root(self, heading: Tag) -> HeadingRoot:
-        self.check_heading(heading)
-
         index = self.HEADINGS.index(heading.name)
         heading_root: HeadingRoot = {}
         # start from h1, h2...
@@ -295,12 +288,6 @@ class MdJoint:
         heading_root[heading.name] = heading.text
 
         return heading_root
-
-    def check_heading(self, heading: Tag):
-        # Check if the tag is part of a BeautifulSoup instance
-        if heading.parent is not self.soup:
-            raise ValueError("Heading tag comes from another parse tree.")
-        # todo no need to check
 
     @staticmethod
     def get_suffix(file: str) -> str:
