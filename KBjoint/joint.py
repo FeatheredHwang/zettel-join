@@ -93,16 +93,17 @@ class MdJoint:
         # Add the Model (NoteTypeDict) to Anki
         mm.add_dict(notetype=m)
 
-    def check_feasible(self, file: str) -> bool:
+    def check_filename(self, file: str) -> bool:
         """
-        check if the file feasible for the model
+        check the file extension,
+        and then check model [suffix] if the same as current model
         :param file: filepath
         :return: feasible or not
         """
         if re.match(r'.*\.md$', file, flags=re.IGNORECASE) \
                 and self.get_suffix(file) == self.FILE_SUFFIX:
             return True
-        return False
+        else: return False
 
     def join(self, file: str, deck_name: str = None):
         """
