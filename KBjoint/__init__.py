@@ -24,6 +24,15 @@ logging.basicConfig(level=logging.DEBUG,
 logging.info(f'Initializing logging - log file path: {log_file_path}')
 
 
+# import test modules if exist
+##################################################
+try:
+    from .test import *
+    logging.info("Importing test module: done.\n")
+except ImportError:
+    logging.info("Importing test module: test module doesn't exist.\n")
+
+
 # Add 'KB Join' menu item
 ##################################################
 
@@ -40,12 +49,3 @@ action = QAction('KB Join', mw)
 qconnect(action.triggered, kb_join)
 # and add it to the tools menu
 mw.form.menuTools.addAction(action)
-
-
-# import test modules if exist
-##################################################
-try:
-    from .test import *
-    logging.info("Importing test module: done.\n")
-except ImportError:
-    logging.info("Importing test module: test module doesn't exist.\n")
