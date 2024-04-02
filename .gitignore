@@ -14,7 +14,9 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/  # include 3rd-party library since Anki doesn't include them by default
+# 'lib' include 3rd-party library since Anki doesn't include them by default
+# no comment after the gitignore pattern, or git cannot recognize it
+lib/
 lib64/
 parts/
 sdist/
