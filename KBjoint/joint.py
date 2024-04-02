@@ -356,6 +356,13 @@ class MdJoint:
 
 
 class ClozeJoint(MdJoint):
+    """
+    This joint will create a cloze note for each heading.
+    Markdown Reference:
+    - To create cloze-deletion, enclose the contents as **strong** or list them all (without strong)
+    - To mark a note, add '⭐' or ':star:' at the start of heading text;
+    ...
+    """
     DEFAULT_NAME: str = 'Cloze (traceable)'
     FILE_SUFFIX: str = 'cloze'
 
