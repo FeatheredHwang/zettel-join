@@ -13,11 +13,10 @@ import os, shutil
 import re
 
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment
-from markdown import markdown, Extension
+import markdown
 # import PyMdown Extensions (pymdownx) from the local libray, cause Anki doesn't include this module
 # PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
-from .lib.pymdownx.arithmatex import ArithmatexExtension
-from .lib.pymdownx.emoji import EmojiExtension, gemoji, to_alt
+from .lib import pymdownx
 from .lib import emojis
 
 from anki.decks import DeckId
@@ -213,17 +212,17 @@ class MdJoint:
         content = self.standardize_md(file)
         self.handling_content = content
 
-        extensions: list[Extension] = []
+        extensions: list[markdown.Extension] = []
         # add math extension
         self.config['math'] = True if '$' in content else False
         if self.config['math']:
             # todo create extension with config dictionary?
-            math_extension = ArithmatexExtension()
+            math_extension = pymdownx.arithmatex.ArithmatexExtension()
             math_extension.config['preview'] = [False, ""]
             math_extension.config['generic'] = [True, ""]
             extensions.append(math_extension)
 
-        html = markdown(content, extensions=extensions)
+        html = markdown.markdown(content, extensions=extensions)
         return BeautifulSoup(html, 'html.parser')
 
     def standardize_md(self, file: str = None, content: str = None) -> str:
@@ -457,7 +456,6 @@ class ClozeJoint(MdJoint):
                 note.tags.append('marked')
             # todo what about user-defined tags
             # Standardize fields
-            logging.debug(note.items())
             for name, value in note.items():
                 note[name] = self.standardize_field(value)
 
