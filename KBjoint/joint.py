@@ -47,7 +47,8 @@ class MdJoint:
     config = {
         # 'img': False,
         'math': False,
-        'emojify': True
+        'standardize-md': True,
+        'emojify-md': True
     }
 
     HEADINGS: list[str] = [f'h{n}' for n in range(1, 7)]
@@ -229,14 +230,15 @@ class MdJoint:
 
         if file: content = self.read(file)
         if not content: return
-        # replace ':emoji-alia:' to emoji
-        content = emojis.encode(content)
+        if self.config['emojify-md']:
+            # replace ':emoji-alia:' to emoji
+            content = emojis.encode(content)
         # TODO !!! other standrdize jobs like:
         #   todo what if no blank line before and after math blocks $$ signal? the render will return false result
         #   todo standard md file: no blank line inside list, even between p and blockquote tags inside li
         #   todo not allow bloquote inside another blockquote
 
-        if file: self.write(file, content)
+        if self.config['standardize-md']: self.write(file, content)
         return content
 
     def comment_noteid(self, heading: Tag, note_id: NoteId):
