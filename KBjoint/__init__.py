@@ -23,7 +23,6 @@ logging.basicConfig(level=logging.DEBUG,
 # log the module's directory
 logging.info(f'Initializing logging - log file path: {log_file_path}')
 
-
 # import test modules if exist
 ##################################################
 try:

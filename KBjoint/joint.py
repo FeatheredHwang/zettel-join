@@ -18,6 +18,7 @@ from markdown import markdown, Extension
 # PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
 from .lib.pymdownx.arithmatex import ArithmatexExtension
 from .lib.pymdownx.emoji import EmojiExtension, gemoji, to_alt
+from .lib import emojis
 
 from anki.decks import DeckId
 from anki.models import ModelManager, NotetypeDict, TemplateDict, MODEL_CLOZE
@@ -43,9 +44,10 @@ class MdJoint:
     aimed_deck: str
     new_notes_count: int
 
-    pymdx_config = {
+    config = {
         # 'img': False,
-        'math': False
+        'math': False,
+        'emojify': True
     }
 
     HEADINGS: list[str] = [f'h{n}' for n in range(1, 7)]
@@ -227,9 +229,8 @@ class MdJoint:
 
         if file: content = self.read(file)
         if not content: return
-        # replace ":star:" to ⭐ otherwise joint cannot recognize marked notes
-        # TODO replace all the shortname-emoji to emoji
-        content = content.replace(':star:', '⭐')
+        # replace ':emoji-alia:' to emoji
+        content = emojis.encode(content)
         # TODO !!! other standrdize jobs like:
         #   todo what if no blank line before and after math blocks $$ signal? the render will return false result
         #   todo standard md file: no blank line inside list, even between p and blockquote tags inside li

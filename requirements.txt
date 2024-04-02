@@ -6,8 +6,8 @@
 #   Mypy is required by Anki add-on development.
 # - aqt is Anki's qt interface
 mypy
-aqt[qt6]~=23.12.1
-anki~=23.12.1
+aqt[qt6]
+anki
 
 ########################            Developing Tools            ########################
 
@@ -17,5 +17,9 @@ markdown
 # Documentation: https://facelessuser.github.io/pymdown-extensions/
 pymdown-extensions
 
+# emojis module allows emojifying content such as: `it's raining :cat:s and :dog:s!`
+#   whose database is based on gemoji library.
+emojis
+
 # Beautiful Soup is a library that makes it easy to scrape information from web pages.
-BeautifulSoup4~=4.12.3
+BeautifulSoup4
