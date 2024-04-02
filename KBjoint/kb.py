@@ -20,7 +20,7 @@ from aqt.utils import showInfo, askUser
 from .joint import MdJoint, ClozeJoint, OnesideJoint
 
 
-class KB:
+class KnowledgeBase:
     """
     Knowledge Base
     """
@@ -71,7 +71,6 @@ class KB:
             logging.info('Initializing KB: dir not valid - ".root" folder missing, ask user to choose-again.')
             if askUser('Knowledge Base directory does not contain "ROOT" file inside.\n'
                        'Choose again?'):
-                # self.init_dir()
                 self.init_dir()
                 return
             else:

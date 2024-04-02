@@ -6,7 +6,7 @@ from aqt import mw
 from aqt.qt import QAction, qconnect
 
 # from kb import KB  # Anki cannot recognize it
-from .kb import KB
+from .kb import KnowledgeBase
 
 # Logging set up
 ##################################################
@@ -31,7 +31,7 @@ def kb_join():
     """
     Join your knowledge base to Anki
     """
-    KB().join()
+    KnowledgeBase(test_mode=test_mode).join()
 
 
 # create a new menu item
