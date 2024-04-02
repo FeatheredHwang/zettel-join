@@ -241,6 +241,13 @@ class MdJoint:
         if self.config['standardize-md']: self.write(file, content)
         return content
 
+    def standardize_field(self, field: str) -> str:
+
+        if self.config['emojify-md']:
+            # replace ':emoji-alia:' to emoji
+            field = emojis.encode(field)
+        return field
+
     def comment_noteid(self, heading: Tag, note_id: NoteId):
         """
         add comment of NoteId for new notes
@@ -442,6 +449,10 @@ class ClozeJoint(MdJoint):
             if '⭐' in note['root']:  # re.search also works, but re.match doesn't
                 note.tags.append('marked')
             # todo what about user-defined tags
+            # Standardize fields
+            logging.debug(note.items())
+            for name, value in note.items():
+                note[name] = self.standardize_field(value)
 
             # add note to deck, and the note object will get assigned with id
             mw.col.add_note(note, deck_id)
