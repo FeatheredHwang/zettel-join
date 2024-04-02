@@ -214,8 +214,8 @@ class MdJoint:
 
         extensions: list[Extension] = []
         # add math extension
-        self.pymdx_config['math'] = True if '$' in content else False
-        if self.pymdx_config['math']:
+        self.config['math'] = True if '$' in content else False
+        if self.config['math']:
             # todo create extension with config dictionary?
             math_extension = ArithmatexExtension()
             math_extension.config['preview'] = [False, ""]
