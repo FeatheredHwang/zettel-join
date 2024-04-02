@@ -4,11 +4,7 @@
 
 """
 
-# todo markdown parser doesn't support :star: (emoji)
 # TODO How to update the model? Using version to keep user's custom changes
-# todo what if no blank line before and after math blocks $$ signal? the render will return false result
-# todo standard md file: no blank line inside list, even between p and blockquote tags inside li
-#   todo not allow bloquote inside another blockquote
 
 """
 
@@ -17,12 +13,11 @@ import os, shutil
 import re
 
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment
-import markdown
+from markdown import markdown, Extension
 # import PyMdown Extensions (pymdownx) from the local libray, cause Anki doesn't include this module
 # PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
-from markdown import Extension
 from .lib.pymdownx.arithmatex import ArithmatexExtension
-from .lib.pymdownx.emoji import EmojiExtension, to_alt
+from .lib.pymdownx.emoji import EmojiExtension, gemoji, to_alt
 
 from anki.decks import DeckId
 from anki.models import ModelManager, NotetypeDict, TemplateDict, MODEL_CLOZE
@@ -43,10 +38,10 @@ class MdJoint:
 
     model_name: str
     handling_file: str
-    handling_deck: str
+    # TODO !!! let's cancel 'handling_content'
+    handling_content: str
+    aimed_deck: str
     new_notes_count: int
-    content: str
-    soup: BeautifulSoup
 
     pymdx_config = {
         # 'img': False,
@@ -120,13 +115,17 @@ class MdJoint:
         pass
 
     def start_join(self, file: str, deck_name: str = None):
-        if not deck_name: self.handling_deck = 'Default'
-        else: self.handling_deck = deck_name
+        if not deck_name: self.aimed_deck = 'Default'
+        else: self.aimed_deck = deck_name
         self.handling_file = file
 
     def finish_join(self):
-        self.handling_deck = ''
+        """
+        While finished join(), clear attrs so that it won't influence next join() job.
+        """
+        self.aimed_deck = ''
         self.handling_file = ''
+        self.handling_content = ''
 
     def join_img(self, soup: BeautifulSoup):
         """
@@ -155,7 +154,7 @@ class MdJoint:
                 continue
             img_name = os.path.basename(img)
             # create a copy with standardized name
-            std_name = '.'.join(self.handling_deck.split(sep='::') + [img_name])
+            std_name = '.'.join(self.aimed_deck.split(sep='::') + [img_name])
             std_img = os.path.join(os.path.dirname(img), std_name)
             shutil.copyfile(img, std_img)
             # modify 'src' attribute of <img> tag
@@ -201,16 +200,18 @@ class MdJoint:
         except Exception as e:
             logging.error(f'File-write error: "{file}" {e}')
 
-    def make_soup(self, file: str):
-        self.content = self.read(file)
-        extensions: list[Extension] = []
+    def make_soup(self, file: str) -> BeautifulSoup:
+        """
+        Transfer md file to html, than using bs4 to parse
+        :param file: md file path
+        :return: beautifulsoup (parse tree) of the file
+        """
+        content = self.standardize(file)
+        self.handling_content = content
 
-        # add emoji extension
-        emoji_extension = EmojiExtension()
-        emoji_extension.config['emoji_generator'] = [to_alt, '']
-        extensions.append(emoji_extension)
+        extensions: list[Extension] = []
         # add math extension
-        self.pymdx_config['math'] = True if '$' in self.content else False
+        self.pymdx_config['math'] = True if '$' in content else False
         if self.pymdx_config['math']:
             # todo create extension with config dictionary?
             math_extension = ArithmatexExtension()
@@ -218,8 +219,23 @@ class MdJoint:
             math_extension.config['generic'] = [True, ""]
             extensions.append(math_extension)
 
-        html = markdown.markdown(self.content, extensions=extensions)
-        self.soup = BeautifulSoup(html, 'html.parser')
+        html = markdown(content, extensions=extensions)
+        return BeautifulSoup(html, 'html.parser')
+
+    def standardize(self, file: str = None, content: str = None):
+
+        if file: content = self.read(file)
+        if not content: return
+        # replace ":star:" to ⭐ otherwise joint cannot recognize marked notes
+        # TODO replace all the shortname-emoji to emoji
+        content = content.replace(':star:', '⭐')
+        # TODO !!! other standrdize jobs like:
+        #   todo what if no blank line before and after math blocks $$ signal? the render will return false result
+        #   todo standard md file: no blank line inside list, even between p and blockquote tags inside li
+        #   todo not allow bloquote inside another blockquote
+
+        if file: self.write(file, content)
+        return content
 
     def comment_noteid(self, heading: Tag, note_id: NoteId):
         """
@@ -227,10 +243,11 @@ class MdJoint:
         :param heading:
         :param note_id:
         """
-        self.content = re.sub(
+        # TODO !!! NOW could it be possible that insert in html tree and at the end transfer html page back to md?
+        self.handling_content = re.sub(
             r'(\n*#+\s*{}\s*\n\n)'.format(heading.text),
             r'\1' + f'<!-- NoteId: {note_id} -->\n\n',
-            self.content)
+            self.handling_content)
         # there must be two '\n' at the end of the pattern,
         #  or the comment will be parsed as part of next element in markdown2
         logging.debug(f'Importing MD - NoteId commented after heading "{heading.text}".')
@@ -389,10 +406,10 @@ class ClozeJoint(MdJoint):
         # find deck or create if not exist
         deck_id: DeckId = mw.col.decks.id(deck_name)
 
-        self.make_soup(file)
+        soup = self.make_soup(file)
         new_notes_count: int = 0
         # Traverse every heading and create note for it
-        for heading in self.soup.find_all(self.TRACEBACK_FIELDS_MAP.keys()):
+        for heading in soup.find_all(self.TRACEBACK_FIELDS_MAP.keys()):
 
             # get heading_root
             heading_root: HeadingRoot = self.get_heading_root(heading)
@@ -424,6 +441,7 @@ class ClozeJoint(MdJoint):
 
             # add note to deck, and the note object will get assigned with id
             mw.col.add_note(note, deck_id)
+            # TODO !!! NOW add comment to a dictionary, comment at the end of the file.
             self.comment_noteid(heading, note.id)
             new_notes_count += 1
             logging.debug(f'Importing MD: Note added, note.id: {note.id}')
@@ -431,7 +449,7 @@ class ClozeJoint(MdJoint):
         # Finally, comment the source file if new-notes imported
         if new_notes_count > 0:
             self.new_notes_count += new_notes_count
-            self.write(file, self.content)
+            self.write(file, self.handling_content)
 
         self.finish_join()
 
