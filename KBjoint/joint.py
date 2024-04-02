@@ -209,7 +209,7 @@ class MdJoint:
         :param file: md file path
         :return: beautifulsoup (parse tree) of the file
         """
-        content = self.standardize(file)
+        content = self.standardize_md(file)
         self.handling_content = content
 
         extensions: list[Extension] = []
@@ -225,7 +225,7 @@ class MdJoint:
         html = markdown(content, extensions=extensions)
         return BeautifulSoup(html, 'html.parser')
 
-    def standardize(self, file: str = None, content: str = None):
+    def standardize_md(self, file: str = None, content: str = None) -> str:
 
         if file: content = self.read(file)
         if not content: return
@@ -489,7 +489,7 @@ class ClozeJoint(MdJoint):
         cloze_tags += heading_soup.select('li > p') if not cloze_tags else []
         cloze_tags += heading_soup.select('li') if not cloze_tags else []
         # todo rename the class attribute to 'math'
-        cloze_math_tags = heading_soup.select('div.arithmatex') if self.pymdx_config['math'] else []
+        cloze_math_tags = heading_soup.select('div.arithmatex') if self.config['math'] else []
         if not cloze_tags and not cloze_math_tags: return '', ''
 
         # cloze deletion
@@ -497,7 +497,7 @@ class ClozeJoint(MdJoint):
         for cloze_tag in cloze_tags:
             cloze_count += 1
             cloze_tag.string = '{{c' + str(cloze_count) + '::' + cloze_tag.string + '}}'
-        if self.pymdx_config['math']:
+        if self.config['math']:
             for cloze_math_tag in cloze_math_tags:
                 cloze_count += 1
                 cloze_math_tag.string = '\\[\n{{c' + str(cloze_count) + ':: ' + cloze_math_tag.string[3:-3] + ' }}\n\\]'
