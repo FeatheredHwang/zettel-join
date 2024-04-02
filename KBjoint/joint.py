@@ -438,7 +438,7 @@ class ClozeJoint(MdJoint):
                 logging.debug(f'Importing MD - cloze-deletion not found, skip: "{root_str}"')
                 continue
 
-            # Create a note
+            # Create a note, assign field values
             logging.debug(f'Importing MD - New note: <{heading.name}> {heading.text}')
             note = Note(mw.col, mw.col.models.byName(self.model_name))
             note['root'] = root_str
@@ -446,7 +446,7 @@ class ClozeJoint(MdJoint):
             note['Extra'] = extra_text
             for key, value in heading_root.items():
                 note[self.TRACEBACK_FIELDS_MAP[key]] = value
-            if '⭐' in note['root']:  # re.search also works, but re.match doesn't
+            if any(value.startswith(star) for star in ['⭐', ':star:'] for value in heading_root.values()):
                 note.tags.append('marked')
             # todo what about user-defined tags
             # Standardize fields
