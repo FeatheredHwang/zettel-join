@@ -120,7 +120,7 @@ class KnowledgeBase:
             join_tasks: list[(str, str)] = []
             for file in files:
                 for suffix, joint in self.joints.items():
-                    if joint.check_feasible(file):
+                    if joint.check_filename(file):
                         join_tasks.append((joint.FILE_SUFFIX, file))
             # Skip to next folder if no join-task exists
             if not join_tasks:
