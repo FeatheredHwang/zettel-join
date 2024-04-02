@@ -7,6 +7,7 @@ Features:
 1. support markdown files (Typora-flavour preferred)
 2. support Math Blocks indicated by '$$', which will be added to cloze deletion.
 3. support Images which is stored locally and will be added to media folder.
+4. allow emojifying content such as: `it's raining :cat:s and :dog:s!`
 
 ## Develop Guide
 
