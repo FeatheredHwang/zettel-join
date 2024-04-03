@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup, Tag, NavigableString, Comment
 import markdown
 # import PyMdown Extensions (pymdownx) from the local libray, cause Anki doesn't include this module
 # PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
-from .lib import pymdownx
+from .lib.pymdownx import arithmatex
 from .lib import emojis
 
 from anki.decks import DeckId
@@ -53,6 +53,7 @@ class MdJoint:
     HEADINGS: list[str] = [f'h{n}' for n in range(1, 7)]
 
     def __init__(self, model_name=DEFAULT_NAME):
+        logging.debug(f'CWD - current working directory: {os.getcwd()}')
         # Using model manager is the only way to add new model
         self.model_name = model_name
         self.new_notes_count = 0
@@ -217,7 +218,7 @@ class MdJoint:
         self.config['math'] = True if '$' in content else False
         if self.config['math']:
             # todo create extension with config dictionary?
-            math_extension = pymdownx.arithmatex.ArithmatexExtension()
+            math_extension = arithmatex.ArithmatexExtension()
             math_extension.config['preview'] = [False, ""]
             math_extension.config['generic'] = [True, ""]
             extensions.append(math_extension)
