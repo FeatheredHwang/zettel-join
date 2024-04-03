@@ -29,15 +29,19 @@ class KnowledgeBase:
     joints: dict[str, MdJoint] = {}
 
     def __init__(self, top_dir: str = None, test_mode: bool = False):
+        logging.debug(f'CWD - current working directory: {os.getcwd()}')
         self.init_dir(top_dir)
         self.test_mode = test_mode
         # Add joints in this function, manually
         self.register_joints()
 
     def register_joints(self):
+        """
+        Add joints in this function, manually
+        # todo let user choose which joint works?
+        """
         if not self.top_dir:
             return
-        # todo let user choose which joint works?
         if not self.test_mode:
             self.joints = {
                 ClozeJoint.FILE_SUFFIX: ClozeJoint(),
@@ -45,7 +49,7 @@ class KnowledgeBase:
             }
         else:
             self.joints = {
-                ClozeJoint.FILE_SUFFIX: ClozeJoint('Cloze traceable (test)'),
+                ClozeJoint.FILE_SUFFIX: ClozeJoint('Cloze (traceable) (test)'),
                 OnesideJoint.FILE_SUFFIX: OnesideJoint('Oneside (test)')
             }
 
@@ -137,9 +141,18 @@ class KnowledgeBase:
                     logging.warning(f'KB join - unexpected joint-suffix "{suffix}" from file "{file}"')
 
     def traverse_archive(self):
+        """
         # todo traverse archive
+        :return:
+        :rtype:
+        """
         pass
 
     def archive(self, dir_path):
+        """
         # todo archive a folder
+
+        :param dir_path:
+        :type dir_path:
+        """
         pass

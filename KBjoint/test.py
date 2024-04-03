@@ -1,22 +1,29 @@
+"""
+For test convenience:
+- add a parallel "kb join test" to the tools menu
+- reset test kb and then join it as soon as Anki opened
+"""
+
 import logging
 import os
 import shutil
 
-from aqt import gui_hooks
-from aqt import mw
+from aqt import mw, gui_hooks
+from aqt.qt import QAction, qconnect
 
-import markdown
+from . import kb
 
-from KBjoint.kb import KnowledgeBase
-from .lib.pymdownx.arithmatex import ArithmatexExtension
+logging.debug(f'CWD - current working directory: {os.getcwd()}')
 
-
-test_mode: bool = True
-test_kb_dir = r'D:\Projects\.test\KB-test'
+TEST_MODE: bool = True
+TEST_KB_DIR = r'D:\Projects\.test\KB-test'
 
 
 def reset_test_kb():
-    for root, dirs, files in os.walk(test_kb_dir):
+    """
+    Replace all the test md files in KB, with the original
+    """
+    for root, dirs, files in os.walk(TEST_KB_DIR):
         if root.endswith('.backup'):
             for file in files:
                 # Copy a file, replace if destination file already exist
@@ -25,53 +32,41 @@ def reset_test_kb():
                         os.path.join(root, file),
                         os.path.join(os.path.dirname(root), file)
                     )
-    # Delete a file
-    # os.remove(file_to_delete)
 
 
-def remove_test_model():
+def kb_join_test():
+    """
+    Join your TEST knowledge base to Anki
+    """
+    # remove all the models
     mm = mw.col.models
-    mm.remove(mm.id_for_name('Cloze traceable (test)'))
+    mm.remove(mm.id_for_name('Cloze (traceable) (test)'))
+    kb.KnowledgeBase(top_dir=TEST_KB_DIR, test_mode=TEST_MODE).join()
 
 
 def output_model():
+    """
+    logging model dictionary for look-through convenience
     # todo write to file rather than logging, do not use logging in test modules
+    """
     logging.info('\n' +
                  str(mw.col.models.by_name('Cloze traceable (test)'))
                  )
 
 
-def kb_join_test():
-    """
-    Join your knowledge base to Anki
-    """
-    reset_test_kb()
-    remove_test_model()
-    KnowledgeBase(top_dir=test_kb_dir, test_mode=test_mode).join()
-    # KB(top_dir=os.path.join(kb_dir, 'BlahBlah')).join()
+if TEST_MODE:
+    # reset test kb each time while we open ANki
+    gui_hooks.profile_did_open.append(reset_test_kb)
 
+    # join test kb as soon as Anki opened
+    gui_hooks.profile_did_open.append(kb_join_test)
 
-text = r"""
-This is inline $\left\{\frac{1}{n^2}\right\}$
-but this is displayed 
+    # add kb_join_test to the tools menu
+    action = QAction('KB Join (test)', mw)
+    qconnect(action.triggered, kb_join_test)
+    mw.form.menuTools.addAction(action)
 
-$$
-\int_0^1\frac{x^4(1-x)^4}{1+x^2}\,dx =\frac{22}{7}-\pi
-$$
-
-centred on its own line.
-"""
-
-
-def test_pymd_extension():
-    math_extension = ArithmatexExtension()
-    math_extension.config['preview'] = [False, ""]
-    math_extension.config['generic'] = [True, ""]
-    html = markdown.markdown(text, extensions=[math_extension])
-    logging.info(html)
-
-
-# gui_hooks.profile_did_open.append(output_model)
-gui_hooks.profile_did_open.append(kb_join_test)
-# gui_hooks.profile_did_open.append(test_pymd_extension)
-
+    # add output_model to the tools menu
+    action = QAction('output Model (test)', mw)
+    qconnect(action.triggered, output_model)
+    mw.form.menuTools.addAction(action)
