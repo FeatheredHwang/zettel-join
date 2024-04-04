@@ -10,4 +10,7 @@
     <orderEntry type="module" module-name="📌reference" />
     <orderEntry type="module" module-name="KB-test" />
   </component>
+  <component name="PackageRequirementsSettings">
+    <option name="versionSpecifier" value="Don't specify version" />
+  </component>
 </module>
