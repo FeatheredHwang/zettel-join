@@ -1,13 +1,28 @@
-import os
-import markdown
+"""
+Transfer markdown files to html for parse convenience,
 
+while using env to protect private information like filepath,
+for details: https://www.geeksforgeeks.org/how-to-create-and-use-env-files-in-python/
+"""
+# importing os module for environment variables
+import os
+# importing necessary functions from dotenv library
+from dotenv import load_dotenv
+
+import markdown
 from markdown import Extension
 from pymdownx.emoji import EmojiExtension, to_alt
 from pymdownx.arithmatex import ArithmatexExtension
 
+# loading variables from .env file
+load_dotenv()
+
 
 def transfer_mds_to_htmls():
-    kb_dir = r'D:\Projects\.test\KB-test'
+    """
+    Transfer markdown files to html for parse convenience
+    """
+    kb_dir = os.getenv("TEST_KB_DIR")
 
     extensions: list[Extension] = []
 
@@ -29,7 +44,7 @@ def transfer_mds_to_htmls():
         if root.endswith('.backup'):
             for file in files:
                 print(file)
-                with open(os.path.join(root, file), 'r', encoding='utf-8') as md_file:
+                with open(os.path.join(root, file), mode='r', encoding='utf-8') as md_file:
                     # Read the entire content of the file
                     file_content = md_file.read()
                     print(f"File <{os.path.join(root, file)}> read successfully")
@@ -40,5 +55,5 @@ def transfer_mds_to_htmls():
 
 
 if __name__ == '__main__':
-    print('Hello World')
+    print(f'CWD: {os.getcwd()}')
     transfer_mds_to_htmls()
