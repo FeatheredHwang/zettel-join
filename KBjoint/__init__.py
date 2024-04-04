@@ -3,16 +3,22 @@ Initialize the Add-on.
 """
 
 import logging
-import os
 
 # from aqt import gui_hooks
 from aqt import mw
 from aqt.qt import QAction, qconnect
+from anki.utils import version_with_build, int_version
 
-
+# logging setup
 from . import log
+# download package to local library
 from . import modules
 from . import kb
+
+# Version Check
+logging.info(f"Current Anki version is: {version_with_build()}")
+if int_version() >= 231000:
+    ...
 
 # Import test modules if exist
 ##################################################
