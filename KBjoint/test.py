@@ -39,13 +39,19 @@ def reset_test_kb():
                     )
 
 
+def remove_models():
+    """
+    remove all the models
+    """
+    mm = mw.col.models
+    mm.remove(mm.id_for_name('Cloze (traceable) (test)'))
+    mm.remove(mm.id_for_name('Oneside (test)'))
+
+
 def kb_join_test():
     """
     Join your TEST knowledge base to Anki
     """
-    # remove all the models
-    mm = mw.col.models
-    mm.remove(mm.id_for_name('Cloze (traceable) (test)'))
     kb.KnowledgeBase(top_dir=TEST_KB_DIR, test_mode=TEST_MODE).join()
 
 
@@ -65,6 +71,9 @@ if TEST_MODE:
 
     # join test kb as soon as Anki opened
     gui_hooks.profile_did_open.append(kb_join_test)
+
+    # delete test models before we close Anki
+    gui_hooks.profile_will_close.append(remove_models)
 
     # add kb_join_test to the tools menu
     action = QAction('KB Join (test)', mw)
