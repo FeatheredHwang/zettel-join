@@ -8,6 +8,8 @@ import logging
 import os
 import shutil
 
+from .lib import dotenv
+
 from aqt import mw, gui_hooks
 from aqt.qt import QAction, qconnect
 
@@ -15,8 +17,11 @@ from . import kb
 
 logging.debug(f'CWD - current working directory: {os.getcwd()}')
 
+# loading variables from .env file
+dotenv.load_dotenv()
+
 TEST_MODE: bool = True
-TEST_KB_DIR = r'D:\Projects\.test\KB-test'
+TEST_KB_DIR = os.getenv("TEST_KB_DIR")
 
 
 def reset_test_kb():
