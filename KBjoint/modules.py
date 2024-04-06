@@ -12,6 +12,7 @@ MODULE_MAP: dict[str, str] = {
     # 'module_name': 'package_name',
     'emojis': 'emojis',
     'pymdownx': 'pymdown-extensions',
+    'dotenv': 'python-dotenv'
 }
 
 # pip options

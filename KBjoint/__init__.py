@@ -24,8 +24,8 @@ if int_version() >= 231000:
 ##################################################
 try:
     from . import test
-except ImportError:
-    logging.info("Importing test module: test module doesn't exist.\n")
+except ImportError as e:
+    logging.info(f"Importing test module: {e}.\n")
 else:
     logging.info("Importing test module: done.\n")
 
