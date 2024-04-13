@@ -1,5 +1,22 @@
 <!--    Cloze Card - Front Template    -->
 
+<script>
+    /**
+     * Customize MathJax:
+     * (since the front side has executed config, no need to add it again in back side)
+     */
+    // ignore duplicate labels;
+    MathJax.config["tex"]["ignoreDuplicateLabels"] = true;
+    // stay within bounds of container
+    MathJax.config["HTML-CSS"] = {
+        linebreaks: { automatic: true, width: "container" }
+    }
+    if (typeof is_already_run == 'undefined') {
+        is_already_run = true
+        MathJax.startup.getComponents();
+    }
+</script>
+
 <h1 id="root">
     {{root}}
 </h1>
