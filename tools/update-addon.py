@@ -18,8 +18,13 @@ os.system("""tasklist | find /i "anki.exe" && ( taskkill /im "anki.exe" /f )""")
 os.system("""tasklist | find /i "mpv.exe" && ( taskkill /im "mpv.exe" /f )""")
 
 
-def ignore_pycache(path, names):
-    # Filter out the __pycache__ directory
+def ignore_pycache(path: str, names: list[str]) -> list[str]:
+    """
+    Filter out the __pycache__ directory
+    :param path: root directory path, as 'root' in 'os.walk'
+    :param names: name list of files and dirs
+    :return: filtered name list of files and dirs
+    """
     return ['__pycache__'] if '__pycache__' in names else []
 
 
