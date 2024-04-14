@@ -64,7 +64,7 @@ The "FileSuffix" indicates which NoteType(Model) should your MD note map to. The
 
 > Unfortunately, AnkiWeb doesn't support markdown table.
 
-Look at the examples to learn about how to write a MD file.
+Look at the [examples](https://github.com/FeatheredHwang/zettel-join/tree/main/zettel_join/ex) to learn about how to write a MD file.
 
 #### One-click import
 
