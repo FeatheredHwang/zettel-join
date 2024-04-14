@@ -91,7 +91,7 @@ class MdJoint:
         t['afmt'] = "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}"
         mm.addTemplate(m, t)
         # Add css
-        m['css'] = self.read('templates/basic.css')
+        m['css'] = self.read('tpl/basic.css')
 
         # Add the Model (NoteTypeDict) to Anki
         mm.add_dict(notetype=m)
@@ -404,10 +404,10 @@ class ClozeJoint(MdJoint):
 
         # Add card template and css
         t: TemplateDict = mm.newTemplate('Cloze')
-        t['qfmt'] = self.read('templates/cloze_front.html')
-        t['afmt'] = self.read('templates/cloze_back.html')
+        t['qfmt'] = self.read('tpl/cloze_front.html')
+        t['afmt'] = self.read('tpl/cloze_back.html')
         mm.addTemplate(m, t)
-        m['css'] = self.read('templates/cloze.css')
+        m['css'] = self.read('tpl/cloze.css')
 
         # Add the Model (NoteTypeDict) to Anki
         mm.add_dict(notetype=m)
