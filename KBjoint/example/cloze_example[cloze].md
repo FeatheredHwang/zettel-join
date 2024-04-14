@@ -164,6 +164,8 @@ Set *items* are unchangeable, but you can remove and/or add items whenever you l
 
 User defined tags will be supported in the future.
 
+**Bi-directional link** will be parsed as tags.
+
 #### Mind Map
 
 Due to ["Use mnemonic techniques" rule](https://www.supermemo.com/en/blog/twenty-rules-of-formulating-knowledge)...
