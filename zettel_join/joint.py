@@ -229,7 +229,7 @@ class MdJoint:
     def standardize_md(self, file: str = None, content: str = None) -> str:
 
         if file: content = self.read(file)
-        if not content: return
+        if not content: return ''
         if self.config['emojify-md']:
             # replace ':emoji-alia:' to emoji
             content = emojis.encode(content)
