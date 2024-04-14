@@ -3,7 +3,6 @@ Transfer markdown files to html for parse convenience,
 """
 import os
 import shutil
-# importing necessary functions from dotenv library
 from dotenv import load_dotenv
 
 import markdown
@@ -11,8 +10,7 @@ from markdown import Extension
 from pymdownx.emoji import EmojiExtension, to_alt
 from pymdownx.arithmatex import ArithmatexExtension
 
-# using env to protect private information like filepath, firstly loading variables from .env file
-# how to use it: https://pypi.org/project/python-dotenv/
+# load variables from .env file
 load_dotenv()
 
 
@@ -21,16 +19,16 @@ def transfer_mds_to_htmls():
     Transfer markdown files to html for parse convenience
     """
     # using os module to get environment variables
-    kb_dir = os.getenv('TEST_KB_DIR')
-    project_doc_dir = os.getenv('PROJECT_DOC_DIR')
+    kasten_path = os.getenv('TEST_KASTEN_PATH')
+    md_ex_path = os.getenv('MD_EX_PATH')
 
     # copy doc files from the project dir
-    for root, dirs, files in os.walk(project_doc_dir):
+    for root, dirs, files in os.walk(md_ex_path):
         for file in files:
             # Copy a file, replace if destination file already exist
             shutil.copy(
                 os.path.join(root, file),
-                os.path.join(kb_dir, 'About this addon/doc/.backup', file)
+                os.path.join(kasten_path, 'About this addon/MD examples/.backup', file)
             )
 
     extensions: list[Extension] = []
@@ -45,8 +43,8 @@ def transfer_mds_to_htmls():
     math_extension.config['generic'] = [True, ""]
     extensions.append(math_extension)
 
-    print(kb_dir)
-    for root, dirs, files in os.walk(kb_dir):
+    print(kasten_path)
+    for root, dirs, files in os.walk(kasten_path):
         # print(root, dirs, files)
         # dirs[:] = [d for d in dirs if not d.startswith('.')]
         files = [f for f in files if not f.startswith('.') and f.endswith('.md')]
