@@ -1,14 +1,14 @@
-# KBjoint
+# Zettels Join
 
 ## Description
 
 ---
 
-Join/Import your knowledge base (for now only md files supported) into Anki Notes.
+This addon is keen to Join/Import your Zettlekasten (or just a dozen of MD files as it be) into Anki Notes.
 
 [Link to add-on](https://ankiweb.net/shared/info/822767335)
 
-**IMPORTANT**: *Addon is still under development.* While likely compatible with earlier versions, add-on versions v0.1 and up have only been extensively tested with Anki `⁨23.12.1`. 
+**IMPORTANT**: *This Addon is still under development.* While likely compatible with earlier versions, add-on versions v0.1 and the uppers have only been extensively tested with Anki `⁨23.12.1`. 
 
 ### Features
 
@@ -17,82 +17,62 @@ Join/Import your knowledge base (for now only md files supported) into Anki Note
 3. support Images which is stored locally and will be added to media folder.
 4. allow emojifying content such as: `:snake:` , output 🐍
 
+### Zettelkasten, what it is?
+
+Zettelkasten is a German word that loosely translates to "note box" or "slip box". Zettels means "Index cards" and Kasten means A box or crate. It is also the name of  a **note-taking technique** that involves writing one idea per note, and storing it in one place, such as a box. The method was popularized by German sociologist **Niklas Luhmann**, who used it to collect and organize all his research notes in boxes. Read the [official introduction](https://zettelkasten.de/introduction/) to learn more about it.
+
+This addon encourage you to recognize your notes system as a Zettlekasten, aimed to your [12 Favorite Problems](https://umbrex.com/resources/tools-for-thinking/what-is-twelve-favorite-problems/#:~:text=The%20concept%20of%20%E2%80%9CTwelve%20Favorite,significant%20progress%20in%20their%20field.), not a so-called knowledge base that stored everything. 
+
+Don't bother though. For now, you can just think of it as a folder containing a dozen of MD files. 
+
 ### How to use
 
-#### Prepare knowledge-base file system
+#### Prepare your Zettelkasten file system
 
-The file system of your KB is supposed to built as the follow structure:
+The file system of your ZK is supposed to built as the follow structure:
 
 ```
-KB_root_folder
-|___.root
-	|___(...)
-|___Area01
-	|___Book01
-		|___ChapterName01[cloze].md
-		|___ChapterName02[cloze].md
-|___Area02
-	|___(...)
+Slipbox-root-folder
+│  
+├─.root
+├─ProjectA
+│  ├─BookX
+│  │      Chapter01[cloze].md
+│  │      Chapter02[cloze].md
+│  │      
+│  └─BookY
+│         (...)
+│
+└─ProjectB
+      (...)
 ```
 
 1. Most importantly, include a '.root' folder in your KB's root, this will indicate this folder is a Knowledge Base.
-2. Hidden files and folders starts with `.` will get skipped.
-3. Folder name will be joined together as deck's name such as: `Area01::Book01`
-4. Add suffix like `[cloze]` to the end of filename, which indicates which joint it uses. For more information, see [Joints](###Joints) 
+2. Hidden files and folders starts with `.` will be ignored.
+3. Folder name will be joined together as deck's name such as: `ProjectA::BookX`
+4. Add suffix like `[cloze]` to the end of filename, which indicates which joint it uses. For more information, see [FileSuffix](###FileSuffix and NoteType) 
 
-#### Joints
+#### FileSuffix and NoteType
 
-A Joint will map your note to a specific NoteType(Model). For now, KBjoint support joints as below:
-
-| Joint      | [FileSuffix] | NoteType          |
-| ---------- | ------------ | ----------------- |
-| ClozeJoint | [cloze]      | Cloze (traceable) |
-
-#### Prepare MD file for **cloze** joint
-
-The MD File Structure is supposed like this:
-
-```markdown
-# ChapterName (H1 heading map to 'Chapter' field)
-
-Each heading will be considered as a single note, up-to three levels. Headings will be joined together as 'root' field. In this heading's content there's no cloze-deletion, so it can't become a Note.
-
-## :star:SectionName (H2 heading map to 'Section' field)
-
-**Strong** tags will be transfered to cloze deletion. If you add :star:/⭐ at the beginning of this heading (or upper level heading), the note will **get marked**.
-
-### SubSectionName (H3 heading map to 'SubSection' field)
-
-Sub-heading of a marked heading will also get marked.
-
-- list item will be transfered to cloze deletion
-- no matter ordered list or unordered list
-
-If Strong words exists as well as list items, list items will be ignored for cloze-deletion.
-
-### Another SubSectioin
-
-At last, math block will be added to cloze deletion, but inline math not (such as $\bar x$). 
-
-$$
-E = mc^2
-$$
-
-___
-
-Additional Info (which will not include to note)
+The "FileSuffix" indicates which NoteType(Model) should your MD note map to. The addon will create NoteTypes after the profile loaded. And it will recognize if the MD file has valid "FileSuffix" then import it.
 
 ```
+| [FileSuffix] | NoteType          |
+| ------------ | ----------------- |
+| [cloze]      | Cloze (traceable) |
+```
 
-1. Each heading will be considered as a single note, up-to three levels. Headings will be joined together as root field.
-2. Strong words will be considered as cloze-deletion. If not, then list items.
-3. If you add ​`:star:`​/`⭐ `at the beginning of this heading (or upper level heading), the note will **get marked**.
+> Unfortunately, AnkiWeb doesn't support markdown table.
+
+Look at the examples to learn about how to write a MD file.
+
+#### One-click import
 
 When the add-on is downloaded, a `KBjoin` option will be added to the `Tools` menu. Click it and choose your Knowledge Base Location, and that's all.
 
 ### Changelog
 
-*TODO Addon is still under development. Version hasn't been setup yet*
+*This Addon is still under development. Version hasn't been setup yet*
 
 #### Version 0.1 -- 2024-04-04
 
@@ -121,7 +101,7 @@ Licensed under the **GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007**. This 
 #### Develop Environment
 
 - Windows 11
-- Python 3.11
+- Python 3.9
 - Anki 23.12.1
 - IDE: PyCharm
 
@@ -157,141 +137,3 @@ Here is a list of keywords that classify commit types,  inspired by [Files](http
 5. Github
 6. IDEA
 
-#### Mistakes I've made
-
-##### mw is None before profile-loaded
-
-Error Example
-```python
-from aqt import mw
-
-mm = mw.col.models
-```
-this will return:
-```
-AttributeError: 'NoneType' object has no attribute 'models'
-```
-
-##### To connect the function to QAction
-
-```python
-from KBjoint import *
-
-action = QAction('KB Join', mw)
-# Wrong
-action.triggered.connect(kb_join())
-# Right
-action.triggered.connect(kb_join)
-```
-
-##### Union type hints</br>
-
-For now, Anki uses Python 3.9 writing union types as `X | Y` allowed in Python 3.10 and later versions.
-
-```python
-from typing import Union
-# Wrong
-def open_kb_dir() -> str | None:
-  pass
-# Right
-def open_dir() -> Union[str, None]:
-  pass
-```
-
-##### `<script>` tag get deleted in HTML editor of fields
-
-`<style>` and `<script>` tag get deleted as soon as the focus leave HTML editor of fields:
-<br>As Anki want to provide better card preloading in the future (preload next card while showing current card), and for that, the field HTML may not contain any styles/scripts.
-<br>In this case, when I use `mdx_math` (python-markdown-math) or `pymdownx.arithmatex` (pymdown-extensions) to parse math, their returned **MathJax-style math** `<script type="math/tex; mode=display">...</script>` will get deleted.
-
-##### How to use `python-markdown` extensions
-
-The Python-Markdown documentation explains how to use extensions:
-
-> The list of extensions may contain instances of extensions and/or strings of extension names.
->
-> `extensions=[MyExtension(), "path.to.my.ext"]`
->
-> The preferred method is to pass in an instance of an extension. 
-> Strings should only be used when it is **impossible**
-> to import the Extension Class directly (from the command line or in a template).
-
-##### How to write math in markdown
-
-This Anki addon uses `python-markdown` to render the md file,
-with `pymdownx.arithmatex` to render math. The way how we 
-write markdown matters.
-
-Error Example 1:
-
-```markdown
-text = r"""
-Bad Example here:
-$$
-\int_0^1\frac{x^4(1-x)^4}{1+x^2}\,dx =\frac{22}{7}-\pi
-$$
-Because we didn't leave blank line above and after '$$'.
-"""
-```
-this will return:
-```html
-<p>Bad Example here:
-$$
-\int_0^1\frac{x^4(1-x)^4}{1+x^2}\,dx =\frac{22}{7}-\pi
-$$
-Because we didn't leave blank line above and after '$$'.</p>
-```
-
-Error Example 2:
-
-```python
-import markdown
-from pymdownx.arithmatex import ArithmatexExtension
-
-def test_pymd_extension():
-    text = r"""
-    This is inline $\left\{\frac{1}{n^2}\right\}$
-    
-    $$
-    \int_0^1\frac{x^4(1-x)^4}{1+x^2}\,dx =\frac{22}{7}-\pi
-    $$
-    """
-    math_extension = ArithmatexExtension()
-    html = markdown.markdown(text, extensions=[ArithmatexExtension()])
-```
-this will return (mention the white space before '$$')
-```markdown
-<pre><code>$$
-\int_0^1\frac{x^4(1-x)^4}{1+x^2}\,dx =\frac{22}{7}-\pi
-$$
-</code></pre>
-```
-
-Good Example:
-```markdown
-text = r"""
-This is inline $\left\{\frac{1}{n^2}\right\}$
-
-but this is displayed 
-
-$$
-\int_0^1\frac{x^4(1-x)^4}{1+x^2}\,dx =\frac{22}{7}-\pi
-$$
-
-centred on its own line.
-"""
-```
-this will return:
-```html
-<p>This is inline <span class="arithmatex"><span class="MathJax_Preview">\left\{\frac{1}{n^2}\right\}</span><script type="math/tex">\left\{\frac{1}{n^2}\right\}</script></span>
-but this is displayed </p>
-<div class="arithmatex">
-<div class="MathJax_Preview">
-\int_0^1\frac{x^4(1-x)^4}{1+x^2}\,dx =\frac{22}{7}-\pi
-</div>
-<script type="math/tex; mode=display">
-\int_0^1\frac{x^4(1-x)^4}{1+x^2}\,dx =\frac{22}{7}-\pi
-</script>
-</div>
-<p>centred on its own line.</p>
-```
