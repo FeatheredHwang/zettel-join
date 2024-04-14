@@ -2,6 +2,7 @@
 Transfer markdown files to html for parse convenience,
 """
 import os
+import pathlib
 import shutil
 from dotenv import load_dotenv
 
@@ -19,16 +20,19 @@ def transfer_mds_to_htmls():
     Transfer markdown files to html for parse convenience
     """
     # using os module to get environment variables
-    kasten_path = os.getenv('TEST_KASTEN_PATH')
+    test_kasten_path = os.getenv('TEST_KASTEN_PATH')
     md_ex_path = os.getenv('MD_EX_PATH')
 
+    ex_dst_path = pathlib.Path(os.path.join(test_kasten_path, 'About this addon/MD examples/.backup'))
+    # if path not exist, create it
+    ex_dst_path.mkdir(parents=True, exist_ok=True)
     # copy MD examples from the project dir
     for root, dirs, files in os.walk(md_ex_path):
         for file in files:
             # Copy a file, replace if destination file already exist
             shutil.copy(
                 os.path.join(root, file),
-                os.path.join(kasten_path, 'About this addon/MD examples/.backup', file)
+                os.path.join(ex_dst_path, file)
             )
 
     extensions: list[Extension] = []
@@ -43,8 +47,8 @@ def transfer_mds_to_htmls():
     math_extension.config['generic'] = [True, ""]
     extensions.append(math_extension)
 
-    print(kasten_path)
-    for root, dirs, files in os.walk(kasten_path):
+    print(test_kasten_path)
+    for root, dirs, files in os.walk(test_kasten_path):
         # print(root, dirs, files)
         # dirs[:] = [d for d in dirs if not d.startswith('.')]
         files = [f for f in files if not f.startswith('.') and f.endswith('.md')]

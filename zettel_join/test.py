@@ -6,6 +6,7 @@ For test convenience:
 
 import logging
 import os
+import pathlib
 import shutil
 
 from .lib import dotenv
@@ -22,24 +23,27 @@ logging.debug(f'CWD - current working directory: {os.getcwd()}')
 dotenv.load_dotenv()
 
 TEST_MODE: bool = True
-TEST_KASTEN_PATH = os.getenv('TEST_KASTEN_PATH')
-MD_EX_PATH = os.getenv('MD_EX_PATH')
+test_kasten_path = os.getenv('TEST_KASTEN_PATH')
+md_ex_path = os.getenv('MD_EX_PATH')
 
 
 def reset_test_kb():
     """
     Replace all the test md files in KB, with the original
     """
+    ex_dst_path = pathlib.Path(os.path.join(test_kasten_path, 'About this addon/MD examples/.backup'))
+    # if path not exist, create it
+    ex_dst_path.mkdir(parents=True, exist_ok=True)
     # copy MD examples from the project dir
-    for root, dirs, files in os.walk(MD_EX_PATH):
+    for root, dirs, files in os.walk(md_ex_path):
         for file in files:
             # Copy a file, replace if destination file already exist
             shutil.copy(
                 os.path.join(root, file),
-                os.path.join(TEST_KASTEN_PATH, 'About this addon/MD examples/.backup', file)
+                os.path.join(ex_dst_path, file)
             )
     # replace test files with the backup
-    for root, dirs, files in os.walk(TEST_KASTEN_PATH):
+    for root, dirs, files in os.walk(test_kasten_path):
         if root.endswith('.backup'):
             for file in files:
                 if file.endswith('.md'):
@@ -62,7 +66,7 @@ def join_test_kb():
     """
     Join your TEST knowledge base to Anki
     """
-    kb.KnowledgeBase(top_dir=TEST_KASTEN_PATH, test_mode=TEST_MODE).join()
+    kb.KnowledgeBase(top_dir=test_kasten_path, test_mode=TEST_MODE).join()
 
 
 def output_model():
