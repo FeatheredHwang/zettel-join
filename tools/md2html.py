@@ -1,11 +1,8 @@
 """
 Transfer markdown files to html for parse convenience,
-
-while using env to protect private information like filepath,
-for details: https://www.geeksforgeeks.org/how-to-create-and-use-env-files-in-python/
 """
-# importing os module for environment variables
 import os
+import shutil
 # importing necessary functions from dotenv library
 from dotenv import load_dotenv
 
@@ -14,7 +11,8 @@ from markdown import Extension
 from pymdownx.emoji import EmojiExtension, to_alt
 from pymdownx.arithmatex import ArithmatexExtension
 
-# loading variables from .env file
+# using env to protect private information like filepath, firstly loading variables from .env file
+# how to use it: https://pypi.org/project/python-dotenv/
 load_dotenv()
 
 
@@ -22,7 +20,18 @@ def transfer_mds_to_htmls():
     """
     Transfer markdown files to html for parse convenience
     """
-    kb_dir = os.getenv("TEST_KB_DIR")
+    # using os module to get environment variables
+    kb_dir = os.getenv('TEST_KB_DIR')
+    project_doc_dir = os.getenv('PROJECT_DOC_DIR')
+
+    # copy doc files from the project dir
+    for root, dirs, files in os.walk(project_doc_dir):
+        for file in files:
+            # Copy a file, replace if destination file already exist
+            shutil.copy(
+                os.path.join(root, file),
+                os.path.join(kb_dir, 'About this addon/doc/.backup', file)
+            )
 
     extensions: list[Extension] = []
 
