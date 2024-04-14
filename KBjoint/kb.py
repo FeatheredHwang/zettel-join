@@ -17,7 +17,7 @@ from aqt import mw
 from aqt.qt import QFileDialog
 from aqt.utils import showInfo, askUser
 
-from .joint import MdJoint, ClozeJoint, OnesideJoint
+from .joint import MdJoint, ClozeJoint  # , OnesideJoint
 
 
 class KnowledgeBase:
@@ -45,12 +45,12 @@ class KnowledgeBase:
         if not self.test_mode:
             self.joints = {
                 ClozeJoint.FILE_SUFFIX: ClozeJoint(),
-                OnesideJoint.FILE_SUFFIX: OnesideJoint()
+                # OnesideJoint.FILE_SUFFIX: OnesideJoint()
             }
         else:
             self.joints = {
                 ClozeJoint.FILE_SUFFIX: ClozeJoint('Cloze (traceable) (test)'),
-                OnesideJoint.FILE_SUFFIX: OnesideJoint('Oneside (test)')
+                # OnesideJoint.FILE_SUFFIX: OnesideJoint('Oneside (test)')
             }
 
     def init_dir(self, top_dir: str = None):
