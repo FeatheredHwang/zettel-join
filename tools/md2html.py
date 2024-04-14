@@ -22,7 +22,7 @@ def transfer_mds_to_htmls():
     kasten_path = os.getenv('TEST_KASTEN_PATH')
     md_ex_path = os.getenv('MD_EX_PATH')
 
-    # copy doc files from the project dir
+    # copy MD examples from the project dir
     for root, dirs, files in os.walk(md_ex_path):
         for file in files:
             # Copy a file, replace if destination file already exist

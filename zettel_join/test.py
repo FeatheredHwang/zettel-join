@@ -15,29 +15,31 @@ from aqt.qt import QAction, qconnect
 
 from . import kb
 
+
 logging.debug(f'CWD - current working directory: {os.getcwd()}')
 
 # loading variables from .env file
 dotenv.load_dotenv()
 
 TEST_MODE: bool = True
-TEST_KB_DIR = os.getenv('TEST_KB_DIR')
-PROJECT_DOC_DIR = os.getenv('PROJECT_DOC_DIR')
+TEST_KASTEN_PATH = os.getenv('TEST_KASTEN_PATH')
+MD_EX_PATH = os.getenv('MD_EX_PATH')
 
 
 def reset_test_kb():
     """
     Replace all the test md files in KB, with the original
     """
-    # copy doc files from the project dir
-    for root, dirs, files in os.walk(PROJECT_DOC_DIR):
+    # copy MD examples from the project dir
+    for root, dirs, files in os.walk(MD_EX_PATH):
         for file in files:
             # Copy a file, replace if destination file already exist
             shutil.copy(
                 os.path.join(root, file),
-                os.path.join(TEST_KB_DIR, 'About this addon/doc/.backup', file)
+                os.path.join(TEST_KASTEN_PATH, 'About this addon/MD examples/.backup', file)
             )
-    for root, dirs, files in os.walk(TEST_KB_DIR):
+    # replace test files with the backup
+    for root, dirs, files in os.walk(TEST_KASTEN_PATH):
         if root.endswith('.backup'):
             for file in files:
                 if file.endswith('.md'):
@@ -60,7 +62,7 @@ def join_test_kb():
     """
     Join your TEST knowledge base to Anki
     """
-    kb.KnowledgeBase(top_dir=TEST_KB_DIR, test_mode=TEST_MODE).join()
+    kb.KnowledgeBase(top_dir=TEST_KASTEN_PATH, test_mode=TEST_MODE).join()
 
 
 def output_model():
