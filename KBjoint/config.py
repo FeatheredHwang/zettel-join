@@ -8,6 +8,7 @@ from aqt import mw, gui_hooks
 
 
 # todo Config set up
+# todo add test mode to config
 ##################################################
 # legacy type
 ConfigDict = dict[str, Any]
