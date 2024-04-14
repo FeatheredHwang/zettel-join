@@ -1,10 +1,22 @@
 <!--    Cloze Card - Back Template    -->
 
+<script>
+    // just as the front side
+    MathJax.config["tex"]["ignoreDuplicateLabels"] = true;
+    MathJax.config["HTML-CSS"] = {
+        linebreaks: { automatic: true, width: "container" }
+    }
+    if (typeof is_already_run == 'undefined') {
+        is_already_run = true
+        MathJax.startup.getComponents();
+    }
+</script>
+
 <h1 id="root">
     {{root}}
 </h1>
 
-<!-- if uses <FrontSide>, the cloze deletion won't show up-->
+<!-- do not use <FrontSide>, otherwise the cloze deletion won't show up-->
 <div class="a" id="cloze-text">
     {{cloze:Text}}
 </div>
