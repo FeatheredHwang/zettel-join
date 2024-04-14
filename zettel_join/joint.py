@@ -517,13 +517,13 @@ class ClozeJoint(MdJoint):
         cloze_count = 0
         for cloze_tag in cloze_tags:
             cloze_count += 1
-            cloze_tag.string = '{{c' + str(cloze_count) + '::' + cloze_tag.string + '}}'
+            cloze_tag.string = '{{c' + str(cloze_count) + '::' + str(cloze_tag.unwrap()) + '}}'
         if self.config['math']:
             for cloze_math_tag in cloze_math_tags:
                 cloze_count += 1
                 cloze_math_tag.string = '\\[\n{{c' + str(cloze_count) + ':: ' + cloze_math_tag.string[3:-3] + ' }}\n\\]'
 
-        # replace blockquote with the orginal
+        # replace blockquote with the original
         ph_count = 0
         for bq_tag in blockquote_tags:
             ph_count += 1
