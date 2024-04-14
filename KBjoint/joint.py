@@ -12,7 +12,7 @@ import logging
 import os, shutil
 import re
 
-from bs4 import BeautifulSoup, Tag, NavigableString, Comment
+from bs4 import BeautifulSoup, Tag, NavigableString, Comment, ResultSet
 import markdown
 # import PyMdown Extensions (pymdownx) from the local libray, cause Anki doesn't include this module
 # PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
@@ -432,6 +432,8 @@ class ClozeJoint(MdJoint):
             # get heading_root
             heading_root: HeadingRoot = self.get_heading_root(heading)
             root_str = '.'.join(heading_root.values())
+            # create note
+            logging.debug(f'Importing MD - get heading: "{root_str}"')
 
             # Check if heading has been imported (commented with note_id)
             noteid = self.get_commented_noteid(heading)
@@ -446,7 +448,6 @@ class ClozeJoint(MdJoint):
                 continue
 
             # Create a note, assign field values
-            logging.debug(f'Importing MD - New note: <{heading.name}> {heading.text}')
             note = Note(mw.col, mw.col.models.byName(self.model_name))
             note['root'] = root_str
             note['Text'] = cloze_text
@@ -465,7 +466,7 @@ class ClozeJoint(MdJoint):
             # TODO !!! NOW add comment to a dictionary, comment at the end of the file.
             self.comment_noteid(heading, note.id)
             new_notes_count += 1
-            logging.debug(f'Importing MD: Note added, note.id: {note.id}')
+            logging.debug(f'Importing MD - Note added, note.id: {note.id}')
 
         # Finally, comment the source file if new-notes imported
         if new_notes_count > 0:
@@ -504,6 +505,7 @@ class ClozeJoint(MdJoint):
             bq_tag.replace_with(ph_tag)
 
         # find all cloze-deletion, avoid including child tag, skip notes if empty
+        cloze_tags: ResultSet
         cloze_tags = heading_soup.find_all('strong')
         cloze_tags += heading_soup.select('li > p') if not cloze_tags else []
         cloze_tags += heading_soup.select('li') if not cloze_tags else []
