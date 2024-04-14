@@ -11,7 +11,7 @@ from pymdownx.emoji import EmojiExtension, to_alt
 from pymdownx.arithmatex import ArithmatexExtension
 
 # load variables from .env file
-load_dotenv()
+load_dotenv('../zettel_join/.env')
 
 
 def transfer_mds_to_htmls():

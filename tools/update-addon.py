@@ -9,7 +9,7 @@ import shutil
 from dotenv import load_dotenv
 
 # load variables from .env file
-load_dotenv()
+load_dotenv('../zettel_join/.env')
 addon_path = os.getenv('ADDON_PATH')
 anki_path = os.getenv('ANKI_PATH')
 

@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 
 
-load_dotenv()
+load_dotenv('../zettel_join/.env')
 
 src = os.path.join(os.getenv('ADDON_PATH'), 'root.log')
 dst = os.path.join(os.getenv('PROJECT_PATH'), '.log')
