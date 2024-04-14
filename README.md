@@ -1,4 +1,4 @@
-# Zettels Join
+# Zettel Join
 
 ## Description
 
