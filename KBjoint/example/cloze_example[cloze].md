@@ -2,13 +2,13 @@
 
 > [!TIP]
 > 
-> Try to write a short name instead of questions like "How to buildup your md file for cloze deletion"
+> Try to write a short name for your heading instead of questions like "How to buildup your md file for cloze deletion", since the addon join the headings to be root field as header of Anki card.
 
 This is an example of how to write markdown for KB-join purpose. 
 
-Each heading in the markdown file will be considered as a single note, up-to three levels (h1-h3). If h4-h6 exists, it will be included in its upper h3 heading.
+**Each heading** in the markdown file will be considered as a single note, up-to three levels (h1-h3). If h4-h6 exists, it will be included in its upper h3 heading.
 
-After join/importation, a comment with Note Id will be inserted after the heading.
+After join/importation, a **comment with Note Id** will be inserted after the heading.
 
 If you add :star:/⭐ at the beginning of this heading (or upper level heading), the note generated from this heading will **get marked**. For example, the h1 heading is indicated as marked, then all the h2 and h3 headings that under the h1 heading will get marked too.
 
@@ -40,26 +40,18 @@ The most concerned question is, how the addon recognize cloze deletions. The add
 List items, no matter ordered or unordered, will join cloze deletion if no strong/emphasis exists inside. If there are more than one paragraph inside the item, only the first paragraph will join cloze deletion. For example, there are four collection data types in the Python programming language:
 
 1. List
-
 2. Tuple
-
 3. Set
-
    > Set items are unchangeable
-
 4. Dictionary
 
 > After  cloze-deletion, it would look like:
 >
 > ```
 > 1. {{c1:: List }}
-> 
 > 2. {{c2:: Tuple }}
-> 
 > 3. {{c3:: Set }}
-> 
 >    > Set items are unchangeable
-> 
 > 4. {{c4:: Dictionary }}
 > ```
 
