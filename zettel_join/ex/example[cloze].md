@@ -1,23 +1,23 @@
-# :star:Cloze Note Example
+# Cloze Note Example
 
 > [!TIP]
 > 
 > Try to write a short name for your heading instead of questions like "How to buildup your md file for cloze deletion", since the addon join the headings to be root field as header of Anki card.
 
-This is an example of how to write markdown for KB-join purpose. 
+This is an example of how to write markdown for "Cloze (traceable)" Note-type. "Cloze (traceable)" is part of "zettel-join" Anki-addon.
 
 **Each heading** in the markdown file will be considered as a single note, up-to three levels (h1-h3). If h4-h6 exists, it will be included in its upper h3 heading.
 
-After join/importation, a **comment with Note Id** will be inserted after the heading.
+After join/importation, a **comment** with Note Id will be inserted after the heading.
 
-If you add :star:/⭐ at the beginning of this heading (or upper level heading), the note generated from this heading will **get marked**. For example, the h1 heading is indicated as marked, then all the h2 and h3 headings that under the h1 heading will get marked too.
+## Field Map
 
-- H1 headings will map to 'Chapter' field, corresponding to **chapters** in the book.
-- H2 headings will map to 'Section' field,  corresponding to **Sections** in the book.
-- H3 headings will map to 'Subsection' field,  corresponding to **Subsections** in the book.**
 - 1-3 headings will be joined together as 'root' field. 
 - Content under the heading (except blockquotes) will map to 'Text' field, where cloze-deletion happens.
 - Blockquotes under the heading will map to 'Extra' field.
+- H1 headings will map to 'Chapter' field, corresponding to chapters in the book.
+- H2 headings will map to 'Section' field,  corresponding to sections in the book.
+- H3 headings will map to 'Subsection' field,  corresponding to subsections in the book.**
 
 ## Cloze-deletion rules
 
@@ -45,7 +45,7 @@ List items, no matter ordered or unordered, will join cloze deletion if no stron
    > Set items are unchangeable
 4. Dictionary
 
-> After  cloze-deletion, it would look like:
+> After cloze-deletion, it would look like:
 >
 > ```
 > 1. {{c1:: List }}
@@ -83,7 +83,9 @@ $$
 \int_0^\infty \frac{x^3}{e^x-1}\,dx = \frac{\pi^4}{15}
 \label{eq:sample}\tag{A}
 $$
+
 The best practice is put only one equation in each math-block. If you wanna put two or more equations into a single math-block,  you can use **'align'** environment and mark each equation with a label. The addon will do cloze-deletion one-by-one.
+
 $$
 \begin{align}
   x &= x + 1 					\label{eq:1}\tag{1}	\\
@@ -148,9 +150,9 @@ For example, there are four collection data types in the Python programming lang
 | Set                   | unordered (unindexed) | unchangeable | no        |
 | Dictionary            | ordered               |              | no        |
 
-Set *items* are unchangeable, but you can remove and/or add items whenever you like.
+> Set *items* are unchangeable, but you can remove and/or add items whenever you like.
 
-[2]: As of Python version 3.7, dictionaries are *ordered*. In Python 3.6 and earlier, dictionaries are *unordered*.
+> As of Python version 3.7, dictionaries are *ordered*. In Python 3.6 and earlier, dictionaries are *unordered*.
 
 #### User defined tags
 
@@ -166,16 +168,36 @@ Due to ["Use mnemonic techniques" rule](https://www.supermemo.com/en/blog/twenty
 
 If there is no cloze-deletion found under the heading, it won't create any note for this note.
 
-## Hint info rule
+## Features
 
-All the blockquotes will be considered as hints, which show up in the back side of note but not in the front.
+### Extra info
+
+All the **blockquotes** will be rendered as 'Extra' field, which show up in the back side of note but not in the front.
 
 Cloze-deletion won't happen in blockquotes.
 
+### Image support
+
+Images with relative path could be imported to Anki. Both Markdown syntax `![alt](src)` and HTML syntax `<img src="src" alt="alt">` are supported. For example:
+
+<img src="./.assets/forest.jpg" alt="竹子" style="zoom:50%;" />
+
+> Photos by [Luca Bravo](https://unsplash.com/@lucabravo), free to use under the [Unsplash License](https://unsplash.com/license)
+
+Since folders inside the Anki media folder are not supported, the addon will add its **relative path** (to the root of Kästen) into the filename as **prefix**, then join/copy images directly to the media folder. In the above example, assuming the image file is under `/About this addon/MD examples/` directory, image's name would be standardized like `About_this_addon.MD_example.forest.jpg`.
+
+### Emoji support
+
+Emoji with syntax `:snake:` is supported, which would output :snake:
+
+### :star:Mark note
+
+If you add ​`:star:`​/⭐ at the beginning of this heading (or upper level heading), the note generated from this heading will be **marked**. For example, the h1 heading is indicated as marked, then all the h2 and h3 headings that under the h1 heading will get marked too.
+
+### To be continued...
+
+#### Fenced Code Blocks
+
 ___
 
-You can add additional info at the end of the file,  which will not be included to Anki.
-
-
-
-[2]: 
+Divided by this horizontal line, you can add additional info at the end of the file,  which will not be included to Anki notes.
