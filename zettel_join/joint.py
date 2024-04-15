@@ -20,10 +20,8 @@ from anki.notes import Note, NoteId
 from aqt import mw
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment, ResultSet
 
+from .lib.pymdownx import arithmatex, superfences
 from .lib import emojis
-# import PyMdown Extensions (pymdownx) from the local libray, cause Anki doesn't include this module
-# PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
-from .lib.pymdownx import arithmatex
 
 # legacy types
 HeadingRoot = dict[str, str]
@@ -45,7 +43,8 @@ class MdJoint:
     new_notes_count: int
 
     config = {
-        # 'img': False,
+        # MD syntax config
+        'fenced-code': False,
         'math': False,
         'standardize-md': True,
         'emojify-md': True
@@ -211,7 +210,7 @@ class MdJoint:
 
     def make_soup(self, file: str) -> BeautifulSoup:
         """
-        Transfer md file to html, than using bs4 to parse
+        Transfer md file to html, then using bs4 to parse
         :param file: md file path
         :return: beautifulsoup (parse tree) of the file
         """
@@ -223,10 +222,17 @@ class MdJoint:
         self.config['math'] = True if '$' in content else False
         if self.config['math']:
             # todo create extension with config dictionary?
-            math_extension = arithmatex.ArithmatexExtension()
-            math_extension.config['preview'] = [False, ""]
-            math_extension.config['generic'] = [True, ""]
-            extensions.append(math_extension)
+            math_ext = arithmatex.ArithmatexExtension()
+            math_ext.config['preview'] = [False, ""]
+            math_ext.config['generic'] = [True, ""]
+            extensions.append(math_ext)
+        # add fenced-code extension
+        self.config['fenced-code'] = True if '```' in content else False
+        if self.config['fenced-code']:
+            # add fenced_code extension
+            fenced_code_ext = superfences.SuperFencesCodeExtension()
+            fenced_code_ext.config['css_class'] = ['BlahBlah', '']
+            extensions.append(fenced_code_ext)
 
         html = markdown.markdown(content, extensions=extensions)
         return BeautifulSoup(html, 'html.parser')

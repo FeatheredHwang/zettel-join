@@ -8,8 +8,10 @@ from dotenv import load_dotenv
 
 import markdown
 from markdown import Extension
+# PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
 from pymdownx.emoji import EmojiExtension, to_alt
 from pymdownx.arithmatex import ArithmatexExtension
+from pymdownx.superfences import SuperFencesCodeExtension
 
 # load variables from .env file
 load_dotenv('../zettel_join/.env')
@@ -32,14 +34,17 @@ def transfer_mds_to_htmls():
     extensions: list[Extension] = []
 
     # add emoji extension
-    emoji_extension = EmojiExtension()
-    emoji_extension.config['emoji_generator'] = [to_alt, '']
-    extensions.append(emoji_extension)
+    emoji_ext = EmojiExtension()
+    emoji_ext.config['emoji_generator'] = [to_alt, '']
+    extensions.append(emoji_ext)
     # add math extension
-    math_extension = ArithmatexExtension()
-    math_extension.config['preview'] = [False, ""]
-    math_extension.config['generic'] = [True, ""]
-    extensions.append(math_extension)
+    math_ext = ArithmatexExtension()
+    math_ext.config['preview'] = [False, ""]
+    math_ext.config['generic'] = [True, ""]
+    extensions.append(math_ext)
+    # add fenced_code extension
+    fenced_code_ext = SuperFencesCodeExtension()
+    extensions.append(fenced_code_ext)
 
     print(test_kasten_path)
     for root, dirs, files in os.walk(test_kasten_path):
