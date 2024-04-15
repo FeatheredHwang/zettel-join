@@ -9,20 +9,21 @@
 """
 
 import logging
-import os, shutil
+import os
 import re
+import shutil
 
-from bs4 import BeautifulSoup, Tag, NavigableString, Comment, ResultSet
 import markdown
-# import PyMdown Extensions (pymdownx) from the local libray, cause Anki doesn't include this module
-# PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
-from .lib.pymdownx import arithmatex
-from .lib import emojis
-
 from anki.decks import DeckId
 from anki.models import ModelManager, NotetypeDict, TemplateDict, MODEL_CLOZE
 from anki.notes import Note, NoteId
 from aqt import mw
+from bs4 import BeautifulSoup, Tag, NavigableString, Comment, ResultSet
+
+from .lib import emojis
+# import PyMdown Extensions (pymdownx) from the local libray, cause Anki doesn't include this module
+# PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
+from .lib.pymdownx import arithmatex
 
 # legacy types
 HeadingRoot = dict[str, str]
@@ -106,7 +107,8 @@ class MdJoint:
         if re.match(r'.*\.md$', file, flags=re.IGNORECASE) \
                 and self.get_suffix(file) == self.FILE_SUFFIX:
             return True
-        else: return False
+        else:
+            return False
 
     def join(self, file: str, deck_name: str = None):
         """
@@ -119,8 +121,10 @@ class MdJoint:
         pass
 
     def start_join(self, file: str, deck_name: str = None):
-        if not deck_name: self.aimed_deck = 'Default'
-        else: self.aimed_deck = deck_name
+        if not deck_name:
+            self.aimed_deck = 'Default'
+        else:
+            self.aimed_deck = deck_name
         self.handling_file = file
 
     def finish_join(self):
@@ -151,7 +155,8 @@ class MdJoint:
             if not os.path.isabs(src):
                 os.chdir(os.path.dirname(self.handling_file))
                 img = os.path.abspath(src)  # img path
-            else: img = src
+            else:
+                img = src
             # continue if file not exist
             if not os.path.exists(img):
                 logging.debug(f'Importing MD - add img failed, file not exist "{img}"')
@@ -271,9 +276,12 @@ class MdJoint:
         """
         comm = heading.next_sibling
         while comm and isinstance(comm, NavigableString):
-            if isinstance(comm, Comment): break
-            else: comm = comm.next_sibling
-        else: return NoteId(0)
+            if isinstance(comm, Comment):
+                break
+            else:
+                comm = comm.next_sibling
+        else:
+            return NoteId(0)
         m = re.fullmatch(
             r'\s*NoteId:\s*(?P<note_id>[0-9]{13})\s*',
             comm,
@@ -487,16 +495,16 @@ class ClozeJoint(MdJoint):
         #   extract the blockquote tags to extra_text
         extra_text = ''
         for tag in heading_soup.find_all(True, recursive=False):
-            if tag.name =='blockquote':
+            if tag.name == 'blockquote':
                 extra_text += str(tag.extract())
             elif tag.name == 'div' and 'arithmatex' not in tag.get('class', []):
-                    tag.decompose()
+                tag.decompose()
             elif tag.name not in ['p', 'ol', 'ul', 'div', 'blockquote']:
                 tag.decompose()
         if not heading_soup: return '', ''
 
         # replace blockquote with the placeholder
-        blockquote_tags = heading_soup.find_all('blockquote', recursive= True)
+        blockquote_tags = heading_soup.find_all('blockquote', recursive=True)
         ph_count = 0
         for bq_tag in blockquote_tags:
             ph_tag = heading_soup.new_tag('blockquote')
