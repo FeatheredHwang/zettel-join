@@ -14,6 +14,7 @@ import re
 import shutil
 
 import markdown
+
 from anki.decks import DeckId
 from anki.models import ModelManager, NotetypeDict, TemplateDict, MODEL_CLOZE
 from anki.notes import Note, NoteId
@@ -46,8 +47,9 @@ class MdJoint:
         # MD syntax config
         'fenced-code': False,
         'math': False,
-        'standardize-md': True,
-        'emojify-md': True
+        # MD standardize config
+        'md-standardize': True,
+        'emojis-encode': True,
     }
 
     HEADINGS: list[str] = [f'h{n}' for n in range(1, 7)]
@@ -174,6 +176,7 @@ class MdJoint:
             # delete copied file
             os.remove(std_img)
 
+    # noinspection PyArgumentEqualDefault
     @staticmethod
     def read(file: str) -> str:
         """
@@ -241,20 +244,20 @@ class MdJoint:
 
         if file: content = self.read(file)
         if not content: return ''
-        if self.config['emojify-md']:
+        if self.config['emojis-encode']:
             # replace ':emoji-alia:' to emoji
             content = emojis.encode(content)
-        # TODO !!! other standrdize jobs like:
+        # TODO !!! other standardize jobs like:
         #   todo what if no blank line before and after math blocks $$ signal? the render will return false result
         #   todo standard md file: no blank line inside list, even between p and blockquote tags inside li
-        #   todo not allow bloquote inside another blockquote
+        #   todo not allow blockquote inside another blockquote
 
-        if self.config['standardize-md']: self.write(file, content)
+        if self.config['md-standardize']: self.write(file, content)
         return content
 
     def standardize_field(self, field: str) -> str:
 
-        if self.config['emojify-md']:
+        if self.config['emojis-encode']:
             # replace ':emoji-alia:' to emoji
             field = emojis.encode(field)
         return field
@@ -274,7 +277,8 @@ class MdJoint:
         #  or the comment will be parsed as part of next element in markdown2
         logging.debug(f'Importing MD - NoteId commented after heading "{heading.text}".')
 
-    def get_commented_noteid(self, heading: Tag) -> NoteId:
+    @staticmethod
+    def get_commented_noteid(heading: Tag) -> NoteId:
         """
         Get the noteid from comment right after the heading tag
         :param heading:
@@ -305,7 +309,6 @@ class MdJoint:
         """
         if heading.name not in self.HEADINGS:
             raise ValueError(f'heading tag supposed, but <{heading.name}> tag get')
-            return
         if recursive:
             stop = self.HEADINGS[:self.HEADINGS.index(heading.name) + 1]
         else:
@@ -510,7 +513,7 @@ class ClozeJoint(MdJoint):
         if not heading_soup: return '', ''
 
         # replace blockquote with the placeholder
-        blockquote_tags = heading_soup.find_all('blockquote', recursive=True)
+        blockquote_tags = heading_soup.find_all('blockquote')
         ph_count = 0
         for bq_tag in blockquote_tags:
             ph_tag = heading_soup.new_tag('blockquote')
