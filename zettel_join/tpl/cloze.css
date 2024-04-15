@@ -19,6 +19,9 @@
   --fg: #f4f5e2;
   /* background color */
   --canvas: #24160b;
+
+  /* custom variable name */
+  --strong-color: #415427;
 }
 
 
