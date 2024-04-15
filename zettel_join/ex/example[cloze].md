@@ -116,8 +116,6 @@ $$
 > }}
 > $$
 > ```
->
-> 
 
 > [!WARNING]
 >
@@ -176,15 +174,29 @@ All the **blockquotes** will be rendered as 'Extra' field, which show up in the 
 
 Cloze-deletion won't happen in blockquotes.
 
+### Fenced code block support
+
+Allowing fenced code block.
+
+Allowing the nesting of fences under blockquotes or lists.
+
+```python
+import os
+```
+
 ### Image support
 
-Images with relative path could be imported to Anki. Both Markdown syntax `![alt](src)` and HTML syntax `<img src="src" alt="alt">` are supported. For example:
+Allowing images with relative or absolute path.
+
+Allowing both Markdown syntax `![alt](src)` and HTML syntax `<img src="src" alt="alt">`.
+
+For example:
 
 ![forest](./.assets/forest.jpg)
 
 > Photos by [Luca Bravo](https://unsplash.com/@lucabravo), free to use under the [Unsplash License](https://unsplash.com/license)
 
-Since folders inside the Anki media folder are not supported, the addon will add its **relative path** (to the root of Kästen) into the filename as **prefix**, then join/copy images directly to the media folder. In the above example, assuming the image file is under `/About this addon/MD examples/` directory, image's name would be standardized like `About_this_addon.MD_example.forest.jpg`.
+Since folders inside the Anki media folder are not supported, the addon will insert its **dirname** (way to the root of Kästen) before the filename as **prefix**, then join/copy images directly to the media folder. In the above example, assuming the image file is under `/About this addon/MD examples/` directory, image's name would be standardized like `About_this_addon.MD_example.forest.jpg`.
 
 ### Emoji support
 
@@ -196,8 +208,8 @@ If you add ​`:star:`​/⭐ at the beginning of this heading (or upper level h
 
 ### To be continued...
 
-#### Fenced Code Blocks
+Read more about [Typora Markdown Reference](https://support.typora.io/Markdown-Reference/)
 
-___
+---
 
 Divided by this horizontal line, you can add additional info at the end of the file,  which will not be included to Anki notes.
