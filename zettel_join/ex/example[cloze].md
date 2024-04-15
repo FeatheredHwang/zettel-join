@@ -180,7 +180,7 @@ Cloze-deletion won't happen in blockquotes.
 
 Images with relative path could be imported to Anki. Both Markdown syntax `![alt](src)` and HTML syntax `<img src="src" alt="alt">` are supported. For example:
 
-<img src="./.assets/forest.jpg" alt="竹子" style="zoom:50%;" />
+![forest](./.assets/forest.jpg)
 
 > Photos by [Luca Bravo](https://unsplash.com/@lucabravo), free to use under the [Unsplash License](https://unsplash.com/license)
 
