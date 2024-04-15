@@ -27,7 +27,7 @@ The most concerned question is, how the addon recognize cloze deletions. The add
 
 ### Strong and emphasis(italic) words
 
-**Strong** words surrounded by `**`, *emphasis* words surrounded by `*`, both will join cloze deletion. 
+**Strong** words surrounded by `**`, ***emphasis*** words surrounded by `*`, both will join cloze deletion. 
 
 > After cloze-deletion, it would look like:
 >
@@ -37,7 +37,9 @@ The most concerned question is, how the addon recognize cloze deletions. The add
 
 ### List items
 
-List items, no matter ordered or unordered, will join cloze deletion if no strong/emphasis exists inside. If there are more than one paragraph inside the item, only the first paragraph will join cloze deletion. For example, there are four collection data types in the Python programming language:
+List items, no matter ordered or unordered, will join cloze deletion *if no strong/emphasis exists inside*. 
+
+For example, there are four collection data types in the Python programming language:
 
 1. List
 2. Tuple
@@ -65,7 +67,22 @@ List items, no matter ordered or unordered, will join cloze deletion if no stron
 
 > [!WARNING] 
 > 
-> If Strong words exists as well as list items, list items will be *ignored* for cloze-deletion.
+> If Strong words exists as well as list items, list items will be **ignored** for cloze-deletion.
+
+#### Table
+
+By default, *table data will join cloze deletion.*
+
+Allowing table and table inside blockquote. Failed with table inside list due to python-markdown's limit.
+
+For example, there are four collection data types in the Python programming language:
+
+| collection data types | ordered               | changeable   | duplicate |
+| --------------------- | --------------------- | ------------ | --------- |
+| List                  | ordered               | changeable   | allow     |
+| Tuple                 | ordered               | unchangeable | allow     |
+| Set                   | unordered (unindexed) | unchangeable | no        |
+| Dictionary            | ordered               | changeable   | no        |
 
 ### Math blocks
 
@@ -84,7 +101,7 @@ $$
 \label{eq:sample}\tag{A}
 $$
 
-The best practice is put only one equation in each math-block. If you wanna put two or more equations into a single math-block,  you can use **'align'** environment and mark each equation with a label. The addon will do cloze-deletion one-by-one.
+The best practice is put only one equation in each math-block. If you wanna put two or more equations into a single math-block,  you can use **'align'** environment and mark each equation with a label. *The addon will do cloze-deletion one-by-one.*
 
 $$
 \begin{align}
@@ -135,22 +152,7 @@ $$
 
 ### To be continued...
 
-#### Table
 
-Tables will be supported in the future.
-
-For example, there are four collection data types in the Python programming language:
-
-| collection data types | ordered               | changeable   | duplicate |
-| --------------------- | --------------------- | ------------ | --------- |
-| List                  | ordered               |              | allow     |
-| Tuple                 | ordered               | unchangeable | allow     |
-| Set                   | unordered (unindexed) | unchangeable | no        |
-| Dictionary            | ordered               |              | no        |
-
-> Set *items* are unchangeable, but you can remove and/or add items whenever you like.
-
-> As of Python version 3.7, dictionaries are *ordered*. In Python 3.6 and earlier, dictionaries are *unordered*.
 
 #### User defined tags
 

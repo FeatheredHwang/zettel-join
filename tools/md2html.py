@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 import markdown
 from markdown import Extension
+from markdown.extensions.tables import TableExtension
 # PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
 from pymdownx.emoji import EmojiExtension, to_alt
 from pymdownx.arithmatex import ArithmatexExtension
@@ -41,10 +42,15 @@ def transfer_mds_to_htmls():
     math_ext = ArithmatexExtension()
     math_ext.config['preview'] = [False, ""]
     math_ext.config['generic'] = [True, ""]
+    # math_ext.setConfig('generic', True)
     extensions.append(math_ext)
     # add fenced_code extension
     fenced_code_ext = SuperFencesCodeExtension()
     extensions.append(fenced_code_ext)
+    # add table extension
+    table_ext = TableExtension()
+    table_ext.setConfig('use_align_attribute', True)
+    extensions.append(table_ext)
 
     print(test_kasten_path)
     for root, dirs, files in os.walk(test_kasten_path):

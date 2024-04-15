@@ -5,6 +5,7 @@
 """
 
 # TODO How to update the model? Using version to keep user's custom changes
+# todo use YAML front matters to include file-width config?
 
 """
 
@@ -20,6 +21,7 @@ from anki.models import ModelManager, NotetypeDict, TemplateDict, MODEL_CLOZE
 from anki.notes import Note, NoteId
 from aqt import mw
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment, ResultSet
+from markdown.extensions import tables
 from pymdownx import arithmatex, superfences
 
 
@@ -223,6 +225,10 @@ class MdJoint:
         self.handling_content = content
 
         extensions: list[markdown.Extension] = []
+        # add table extension
+        table_ext = tables.TableExtension()
+        table_ext.setConfig('use_align_attribute', True)
+        extensions.append(table_ext)
         # add math extension
         self.config['math'] = True if '$' in content else False
         if self.config['math']:
