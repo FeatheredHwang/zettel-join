@@ -24,6 +24,9 @@ from bs4 import BeautifulSoup, Tag, NavigableString, Comment, ResultSet
 from .lib.pymdownx import arithmatex, superfences
 from .lib import emojis
 
+logger = logging.getLogger(__name__)
+
+
 # legacy types
 HeadingRoot = dict[str, str]
 
@@ -55,7 +58,7 @@ class MdJoint:
     HEADINGS: list[str] = [f'h{n}' for n in range(1, 7)]
 
     def __init__(self, model_name=DEFAULT_NAME):
-        logging.debug(f'CWD - current working directory: {os.getcwd()}')
+        logger.debug(f'CWD - current working directory: {os.getcwd()}')
         # Using model manager is the only way to add new model
         self.model_name = model_name
         self.new_notes_count = 0
@@ -63,16 +66,16 @@ class MdJoint:
         # verify if model exists
         m = mw.col.models.byName(model_name)
         if m:
-            logging.info(f'Initializing model - model already exists: "{model_name}"')
+            logger.info(f'Initializing model - model already exists: "{model_name}"')
         else:
             # build model if not exists
-            logging.info(f'Initializing model - model not exists, build() started: "{model_name}"')
+            logger.info(f'Initializing model - model not exists, build() started: "{model_name}"')
             # Set the working directory to the path of current Python script
             #   used to find template files by relative path
             os.chdir(os.path.dirname(os.path.abspath(__file__)))
-            logging.debug(f'Initializing model - current working directory is: {os.getcwd()}')
+            logger.debug(f'Initializing model - current working directory is: {os.getcwd()}')
             self.build()
-            logging.info(f'Initializing model - model not exists, build() done: "{model_name}"')
+            logger.info(f'Initializing model - model not exists, build() done: "{model_name}"')
 
     def build(self):
         """
@@ -150,7 +153,7 @@ class MdJoint:
             src = img_tag.get('src', None)
             # continue if src attribute missing
             if not src:
-                logging.debug(f'Importing MD - add img failed, src attr missing "{src}"')
+                logger.debug(f'Importing MD - add img failed, src attr missing "{src}"')
                 continue
             # todo what if src is weblink
             if not os.path.isabs(src):
@@ -160,7 +163,7 @@ class MdJoint:
                 img = src
             # continue if file not exist
             if not os.path.exists(img):
-                logging.debug(f'Importing MD - add img failed, file not exist "{img}"')
+                logger.debug(f'Importing MD - add img failed, file not exist "{img}"')
                 continue
             img_name = os.path.basename(img)
             # create a copy with standardized name
@@ -172,7 +175,7 @@ class MdJoint:
             # Anki will add basename of path to the media folder, renaming if not unique
             # which could be found under `%APPDATA%\Anki2`
             if not mw.col.media.have(std_name): mw.col.media.addFile(std_img)
-            logging.debug(f'Importing MD - add img success, img path "{std_name}"')
+            logger.debug(f'Importing MD - add img success, img path "{std_name}"')
             # delete copied file
             os.remove(std_img)
 
@@ -189,12 +192,12 @@ class MdJoint:
             with open(file, 'r', encoding='utf-8') as f:
                 # Read the entire content of the file
                 file_content = f.read()
-                logging.debug(f'File-read done: "{file}"')
+                logger.debug(f'File-read done: "{file}"')
                 return file_content
         except FileNotFoundError:
-            logging.error(f'File-read error - File not found: "{file}"')
+            logger.error(f'File-read error - File not found: "{file}"')
         except IOError as e:
-            logging.error(f'File-read error: "{file}" {e}')
+            logger.error(f'File-read error: "{file}" {e}')
         return ''
 
     @staticmethod
@@ -207,9 +210,9 @@ class MdJoint:
         try:
             with open(file, 'w', encoding='utf-8') as f:
                 f.write(content)
-            logging.debug(f'File-write done: "{file}"')
+            logger.debug(f'File-write done: "{file}"')
         except Exception as e:
-            logging.error(f'File-write error: "{file}" {e}')
+            logger.error(f'File-write error: "{file}" {e}')
 
     def make_soup(self, file: str) -> BeautifulSoup:
         """
@@ -275,7 +278,7 @@ class MdJoint:
             self.handling_content)
         # there must be two '\n' at the end of the pattern,
         #  or the comment will be parsed as part of next element in markdown2
-        logging.debug(f'Importing MD - NoteId commented after heading "{heading.text}".')
+        logger.debug(f'Importing MD - NoteId commented after heading "{heading.text}".')
 
     @staticmethod
     def get_commented_noteid(heading: Tag) -> NoteId:
@@ -450,18 +453,18 @@ class ClozeJoint(MdJoint):
             heading_root: HeadingRoot = self.get_heading_root(heading)
             root_str = '.'.join(heading_root.values())
             # create note
-            logging.debug(f'Importing MD - get heading: "{root_str}"')
+            logger.debug(f'Importing MD - get heading: "{root_str}"')
 
             # Check if heading has been imported (commented with note_id)
             noteid = self.get_commented_noteid(heading)
             if noteid:
-                logging.debug(f'Importing MD - note already imported: "{root_str}"')
+                logger.debug(f'Importing MD - note already imported: "{root_str}"')
                 continue
 
             # check if heading has cloze-deletion
             cloze_text, extra_text = self.get_cloze_text(heading)
             if not cloze_text:
-                logging.debug(f'Importing MD - cloze-deletion not found, skip: "{root_str}"')
+                logger.debug(f'Importing MD - cloze-deletion not found, skip: "{root_str}"')
                 continue
 
             # Create a note, assign field values
@@ -483,7 +486,7 @@ class ClozeJoint(MdJoint):
             # TODO !!! NOW add comment to a dictionary, comment at the end of the file.
             self.comment_noteid(heading, note.id)
             new_notes_count += 1
-            logging.debug(f'Importing MD - Note added, note.id: {note.id}')
+            logger.debug(f'Importing MD - Note added, note.id: {note.id}')
 
         # Finally, comment the source file if new-notes imported
         if new_notes_count > 0:
@@ -558,7 +561,7 @@ class ClozeJoint(MdJoint):
         # Add image files to media
         self.join_img(heading_soup)
 
-        # logging.debug('Text field after cloze-deletion: ' + str(heading_soup))
+        # logger.debug('Text field after cloze-deletion: ' + str(heading_soup))
         return str(heading_soup), extra_text
 
 

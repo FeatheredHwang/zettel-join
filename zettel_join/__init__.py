@@ -15,8 +15,10 @@ from . import log
 from . import modules
 from . import kb
 
+logger = logging.getLogger(__name__)
+
 # Version Check
-logging.info(f"Current Anki version is: {version_with_build()}")
+logger.info(f"Current Anki version is: {version_with_build()}")
 if int_version() >= 231000:
     ...
 
@@ -25,9 +27,9 @@ if int_version() >= 231000:
 try:
     from . import test
 except ImportError as e:
-    logging.info(f"Importing test module: {e}.\n")
+    logger.info(f"Importing test module: {e}.\n")
 else:
-    logging.info("Importing test module: done.\n")
+    logger.info("Importing test module: done.\n")
 
 
 # Add 'KB Join' menu item

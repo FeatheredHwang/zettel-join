@@ -3,8 +3,9 @@ import os
 import json
 from typing import Any
 
-
 from aqt import mw, gui_hooks
+
+logger = logging.getLogger(__name__)
 
 
 # todo Config set up
@@ -29,13 +30,13 @@ def load_json_config():
     if os.path.exists(config_json_file):
         with open(config_json_file) as f:
             config = json.load(f)
-        logging.info(f'Config File Found: {os.path.basename(config_json_file)}\n'
-                     f'The earlier configs: \n{json.dumps(config)}')
+        logger.info(f'Config File Found: {os.path.basename(config_json_file)}\n'
+                    f'The earlier configs: \n{json.dumps(config)}')
     else:
         config = {
             'config_json_file': config_json_file,
         }
-        logging.info(f'Config File Not Found: {config_json_file}')
+        logger.info(f'Config File Not Found: {config_json_file}')
 
 
 def save_json_config():

@@ -1,10 +1,14 @@
 """
-Install packages that are not included in Anki
+Install packages to local libray since they are not included in Anki
 """
 
 import logging
 import os
 import subprocess
+import sys
+
+logging.basicConfig(format='zzzzz %(asctime)s - %(name)s - %(levelname)s - Import module - %(message)s')
+logger = logging.getLogger(__name__)
 
 
 # Register modules/packages Here!
@@ -30,16 +34,17 @@ def check_modules():
     check if modules exist, install module if not
     """
     logging.debug(f'CWD - current working directory: {os.getcwd()}')
+    logger.debug(f'CWD: {os.getcwd()}')
     for module_name in MODULE_MAP.keys():
         if os.path.exists(os.path.join(TARGET_DIR, module_name)):
-            logging.debug(f'Import module - modules already exist: "{module_name}".')
+            logger.debug(f'Import module - modules already exist: "{module_name}".')
         else:
-            logging.info(
+            logger.info(
                 f'Import module - module not found, install package with pip: "{MODULE_MAP[module_name]}".')
             command = ['pip', 'install', '-i', INDEX_URL, '--target', TARGET_DIR, MODULE_MAP[module_name]]
             subprocess.check_call(command)
             # todo not let the command-line show up while install package, and print the output to log
-    logging.debug('Import module finished.\n')
+    logger.debug('Import module finished.\n')
 
 
 check_modules()

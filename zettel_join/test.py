@@ -16,7 +16,10 @@ from aqt.qt import QAction, qconnect
 
 from . import kb
 
-logging.debug(f'CWD - current working directory: {os.getcwd()}')
+logger = logging.getLogger(__name__)
+
+
+logger.debug(f'CWD: {os.getcwd()}')
 
 # loading variables from .env file
 dotenv.load_dotenv()
@@ -62,9 +65,9 @@ def output_model():
     logging model dictionary for look-through convenience
     # todo write to file rather than logging, do not use logging in test modules
     """
-    logging.info('\n' +
-                 str(mw.col.models.by_name('Cloze traceable (test)'))
-                 )
+    logger.info('\n' +
+                str(mw.col.models.by_name('Cloze traceable (test)'))
+                )
 
 
 if TEST_MODE:
