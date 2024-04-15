@@ -7,7 +7,6 @@ import os
 import subprocess
 import sys
 
-logging.basicConfig(format='zzzzz %(asctime)s - %(name)s - %(levelname)s - Import module - %(message)s')
 logger = logging.getLogger(__name__)
 
 
@@ -33,8 +32,11 @@ def check_modules():
     """
     check if modules exist, install module if not
     """
-    logging.debug(f'CWD - current working directory: {os.getcwd()}')
     logger.debug(f'CWD: {os.getcwd()}')
+    # sys.path contains a list of directories that the interpreter will search in for the required module.
+    sys.path.append(os.path.join(os.getcwd(), TARGET_DIR))
+    logger.info(f'Import module - add path to sys.path: {sys.path[-1]}')
+    # download modules
     for module_name in MODULE_MAP.keys():
         if os.path.exists(os.path.join(TARGET_DIR, module_name)):
             logger.debug(f'Import module - modules already exist: "{module_name}".')

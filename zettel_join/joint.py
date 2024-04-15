@@ -8,11 +8,11 @@
 
 """
 
+import emojis
 import logging
 import os
 import re
 import shutil
-
 import markdown
 
 from anki.decks import DeckId
@@ -20,9 +20,8 @@ from anki.models import ModelManager, NotetypeDict, TemplateDict, MODEL_CLOZE
 from anki.notes import Note, NoteId
 from aqt import mw
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment, ResultSet
+from pymdownx import arithmatex, superfences
 
-from .lib.pymdownx import arithmatex, superfences
-from .lib import emojis
 
 logger = logging.getLogger(__name__)
 

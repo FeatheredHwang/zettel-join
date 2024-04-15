@@ -4,12 +4,11 @@ For test convenience:
 - reset test kb and then join it as soon as Anki opened
 """
 
+import dotenv
 import logging
 import os
 import pathlib
 import shutil
-
-from .lib import dotenv
 
 from aqt import mw, gui_hooks
 from aqt.qt import QAction, qconnect
