@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 
 load_dotenv('../zettel_join/.env')
 
-src = os.path.join(os.getenv('ADDON_PATH'), 'root.log')
-dst = os.path.join(os.getenv('PROJECT_PATH'), '.log')
+src = os.path.join(os.getenv('ADDON_PATH'), 'DEBUG.log')
+dst = os.path.join(os.getenv('PROJECT_PATH'), 'DEBUG.log')
 os.symlink(src, dst)
 print("symlink created")
 
