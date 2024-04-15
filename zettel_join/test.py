@@ -16,7 +16,6 @@ from aqt.qt import QAction, qconnect
 
 from . import kb
 
-
 logging.debug(f'CWD - current working directory: {os.getcwd()}')
 
 # loading variables from .env file
@@ -83,6 +82,11 @@ if TEST_MODE:
     # reset test kb each time while we open ANki
     gui_hooks.profile_did_open.append(reset_test_kb)
 
+    # delete test models after we open Anki
+    gui_hooks.profile_did_open.append(remove_test_models)
+    # delete test models before we close Anki
+    gui_hooks.profile_will_close.append(remove_test_models)
+
     # join test kb as soon as Anki opened
     gui_hooks.profile_did_open.append(join_test_kb)
 
@@ -95,6 +99,3 @@ if TEST_MODE:
     action = QAction('output Model (test)', mw)
     qconnect(action.triggered, output_model)
     mw.form.menuTools.addAction(action)
-else:
-    # delete test models after we open Anki
-    gui_hooks.profile_did_open.append(remove_test_models)
