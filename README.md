@@ -4,7 +4,7 @@
 
 ---
 
-This addon is keen to Join/Import your Zettlekasten (or just a dozen of MD files as it be) into Anki Notes.
+This addon is keen to Join/Import your ZettelKästen  (or just a dozen of MD files as it be) into Anki Notes.
 
 [Link to add-on](https://ankiweb.net/shared/info/822767335)
 
@@ -47,10 +47,10 @@ Slipbox-root-folder
       (...)
 ```
 
-1. Most importantly, include a '.root' folder in your KB's root, this will indicate this folder is a Knowledge Base.
+1. Most importantly, include a '.root' folder in your Kästen's root, this will indicate this folder is a Knowledge Base.
 2. Hidden files and folders starts with `.` will be ignored.
 3. Folder name will be joined together as deck's name such as: `ProjectA::BookX`
-4. Add suffix like `[cloze]` to the end of filename, which indicates which joint it uses. For more information, see [FileSuffix](###FileSuffix and NoteType) 
+4. Add suffix like `[cloze]` to the end of filename, which indicates what Note-type it uses. For more information, see [FileSuffix](###FileSuffix and NoteType) 
 
 #### FileSuffix and NoteType
 
@@ -78,7 +78,7 @@ When the add-on is downloaded, a `KBjoin` option will be added to the `Tools` me
 
 Added
 
-- KB examination and walk through
+- Kästen examination and walk through
 - Cloze Joint
 - Images, Math Blocks and Emojis support
 
@@ -86,11 +86,11 @@ Added
 
 You can message me at [feathered.hwang@hotmail.com](feathered.hwang@hotmail.com). Constructive feedback and suggestions are always welcome!
 
-If you like KBjoint, please give it a  :thumbsup: thumbs up and share it with your friends, so that more people can enjoy it!
+If you like zettel-join, please give it a  :thumbsup: thumbs up and share it with your friends, so that more people can enjoy it!
 
 ### Credit And License
 
-Licensed under the **GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007**. This program is distributed in the hope that it will be useful, but **WITHOUT ANY WARRANTY**. For more information on the license please see the [LICENSE file](https://github.com/FeatheredHwang/KBjoint/blob/main/LICENSE) accompanying this add-on. The source code is available on  [GitHub](https://github.com/FeatheredHwang/KBjoint). Pull requests and other contributions are welcome!
+Licensed under the **GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007**. This program is distributed in the hope that it will be useful, but **WITHOUT ANY WARRANTY**. For more information on the license please see the [LICENSE file](https://github.com/FeatheredHwang/zettel-join/blob/main/LICENSE) accompanying this add-on. The source code is available on  [GitHub](https://github.com/FeatheredHwang/zettel-join). Pull requests and other contributions are welcome!
 
 ---
 
