@@ -234,8 +234,8 @@ class MdJoint:
         if self.config['math']:
             # todo create extension with config dictionary?
             math_ext = arithmatex.ArithmatexExtension()
-            math_ext.config['preview'] = [False, ""]
-            math_ext.config['generic'] = [True, ""]
+            math_ext.setConfig('preview', False)
+            math_ext.setConfig('generic', True)
             extensions.append(math_ext)
         # add fenced-code extension
         self.config['fenced-code'] = True if '```' in content else False

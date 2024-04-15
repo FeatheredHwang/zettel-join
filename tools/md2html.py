@@ -36,13 +36,12 @@ def transfer_mds_to_htmls():
 
     # add emoji extension
     emoji_ext = EmojiExtension()
-    emoji_ext.config['emoji_generator'] = [to_alt, '']
+    emoji_ext.setConfig('emoji_generator', to_alt)
     extensions.append(emoji_ext)
     # add math extension
     math_ext = ArithmatexExtension()
-    math_ext.config['preview'] = [False, ""]
-    math_ext.config['generic'] = [True, ""]
-    # math_ext.setConfig('generic', True)
+    math_ext.setConfig('preview', False)
+    math_ext.setConfig('generic', True)
     extensions.append(math_ext)
     # add fenced_code extension
     fenced_code_ext = SuperFencesCodeExtension()
