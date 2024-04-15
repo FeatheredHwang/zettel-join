@@ -517,7 +517,15 @@ class ClozeJoint(MdJoint):
         cloze_count = 0
         for cloze_tag in cloze_tags:
             cloze_count += 1
-            cloze_tag.string = '{{c' + str(cloze_count) + '::' + str(cloze_tag.unwrap()) + '}}'
+            if len(cloze_tag.contents) == 1:
+                cloze_tag.string = '{{c' + str(cloze_count) + ':: ' + cloze_tag.string + '}}'
+            elif len(cloze_tag.contents) > 1:
+                cloze_tag.contents[0].insert_before('{{c' + str(cloze_count) + ':: ')
+                b = cloze_tag.find('blockquote')
+                if b:
+                    b.insert_before(' }}')
+                else:
+                    cloze_tag.contents[-1].insert_after(' }}')
         if self.config['math']:
             for cloze_math_tag in cloze_math_tags:
                 cloze_count += 1
