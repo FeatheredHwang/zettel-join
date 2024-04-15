@@ -26,14 +26,8 @@ def transfer_mds_to_htmls():
     ex_dst_path = pathlib.Path(os.path.join(test_kasten_path, 'About this addon/MD examples/.backup'))
     # if path not exist, create it
     ex_dst_path.mkdir(parents=True, exist_ok=True)
-    # copy MD examples from the project dir
-    for root, dirs, files in os.walk(md_ex_path):
-        for file in files:
-            # Copy a file, replace if destination file already exist
-            shutil.copy(
-                os.path.join(root, file),
-                os.path.join(ex_dst_path, file)
-            )
+    # copy MD examples from the project dir, overwrite if file exists
+    shutil.copytree(md_ex_path, ex_dst_path, dirs_exist_ok=True)
 
     extensions: list[Extension] = []
 
