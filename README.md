@@ -4,18 +4,16 @@
 
 ---
 
-This addon is keen to Join/Import your ZettelKästen  (or just a dozen of MD files as it be) into Anki Notes.
+Join/Import your ZettelKästen  (or just a dozen of MD files as it be) into Anki Notes.
 
 [Link to add-on](https://ankiweb.net/shared/info/822767335)
 
-**IMPORTANT**: *This Addon is still under development.* While likely compatible with earlier versions, add-on versions v0.1 and the uppers have only been extensively tested with Anki `⁨23.12.1`. 
+**IMPORTANT**: *This Addon is still under development.* While likely compatible with earlier versions, add-on v0.1.0-beta and the uppers have only been extensively tested with Anki `⁨23.12.1`. 
 
 ### Features
 
-1. support markdown files (Typora-flavor preferred)
-2. support Math Blocks indicated by '$$', which will be added to cloze deletion.
-3. support Images which is stored locally and will be added to media folder.
-4. allow emojifying content such as: `:snake:` , output 🐍
+1. Join MD notes to 'Cloze (treacable)' model
+2. support math block, code block, table, image and emoji
 
 ### Zettelkasten, what it is?
 
@@ -50,7 +48,7 @@ Slipbox-root-folder
 1. Most importantly, include a '.root' folder in your Kästen's root, this will indicate this folder is a Knowledge Base.
 2. Hidden files and folders starts with `.` will be ignored.
 3. Folder name will be joined together as deck's name such as: `ProjectA::BookX`
-4. Add suffix like `[cloze]` to the end of filename, which indicates what Note-type it uses. For more information, see [FileSuffix](###FileSuffix and NoteType) 
+4. Add suffix like `[cloze]` to the end of filename, which indicates what Note-type it uses. For more information, see next section.
 
 #### FileSuffix and NoteType
 
@@ -74,23 +72,28 @@ When the add-on is downloaded, a `KBjoin` option will be added to the `Tools` me
 
 *This Addon is still under development. Version hasn't been setup yet*
 
-#### Version 0.1 -- 2024-04-04
+#### v0.1.0-beta -- 2024-04-20
 
-Added
+What's Changed
 
-- Kästen examination and walk through
-- Cloze Joint
-- Images, Math Blocks and Emojis support
+- Join MD notes to 'Cloze (treacable)' model
+- support math block, code block, table, image and emoji
+
+[Full Changelog](https://github.com/FeatheredHwang/zettel-join/commits/0.1.0-beta)
 
 ### Help And Support
 
-You can message me at [feathered.hwang@hotmail.com](feathered.hwang@hotmail.com). Constructive feedback and suggestions are always welcome!
-
-If you like zettel-join, please give it a  :thumbsup: thumbs up and share it with your friends, so that more people can enjoy it!
+**Please do not use reviews for bug reports or support requests.** I don't get notified of your reviews, and properly troubleshooting an issue through them is nearly impossible. Instead, please either use the [issue tracker](https://github.com/FeatheredHwang/zettel-join/issues) (preferred), [add-on support forums](https://forums.ankiweb.net/t/zettel-join-support-thread/43867?u=featheredhwang), or just message me at  feathered.hwang@hotmail.com. Constructive feedback and suggestions are always welcome!
 
 ### Credit And License
 
-Licensed under the **GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007**. This program is distributed in the hope that it will be useful, but **WITHOUT ANY WARRANTY**. For more information on the license please see the [LICENSE file](https://github.com/FeatheredHwang/zettel-join/blob/main/LICENSE) accompanying this add-on. The source code is available on  [GitHub](https://github.com/FeatheredHwang/zettel-join). Pull requests and other contributions are welcome!
+Copyright © 2024 [Feathered Hwang](https://github.com/FeatheredHwang) 
+
+Licensed under the **GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007**. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY. For more information on the license please see the [LICENSE file](https://github.com/FeatheredHwang/zettel-join/blob/main/LICENSE) accompanying this add-on. The source code is available on  [GitHub](https://github.com/FeatheredHwang/zettel-join). Pull requests and other contributions are welcome!
+
+### Support My Work
+
+If you like zettel-join, please give it a  :thumbsup: thumbs up and share it with your friends, so that more people can enjoy it!
 
 ---
 
