@@ -516,7 +516,7 @@ class ClozeJoint(MdJoint):
                 extra_text += str(tag.extract())
             elif tag.name == 'div' and 'arithmatex' not in tag.get('class', []):
                 tag.decompose()
-            elif tag.name not in ['p', 'ol', 'ul', 'div', 'blockquote']:
+            elif tag.name not in ['p', 'ol', 'ul', 'div', 'table']:
                 tag.decompose()
         if not heading_soup: return '', ''
 
@@ -531,7 +531,7 @@ class ClozeJoint(MdJoint):
 
         # find all cloze-deletion, avoid including child tag, skip notes if empty
         cloze_tags: ResultSet
-        cloze_tags = heading_soup.find_all('strong')
+        cloze_tags = heading_soup.find_all(['strong', 'em', 'td'])
         cloze_tags += heading_soup.select('li > p') if not cloze_tags else []
         cloze_tags += heading_soup.select('li') if not cloze_tags else []
         # todo rename the class attribute to 'math'
@@ -541,6 +541,9 @@ class ClozeJoint(MdJoint):
         # cloze deletion
         cloze_count = 0
         for cloze_tag in cloze_tags:
+            # skip empty tag
+            if cloze_tag.string == '':
+                continue
             cloze_count += 1
             if len(cloze_tag.contents) == 1:
                 cloze_tag.string = '{{c' + str(cloze_count) + ':: ' + cloze_tag.string + '}}'
