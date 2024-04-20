@@ -27,7 +27,7 @@ The most concerned question is, how the addon recognize cloze deletions. The add
 
 ### Strong and emphasis(italic) words
 
-**Strong** words surrounded by `**`, ***emphasis*** words surrounded by `*`, both will join cloze deletion. 
+**Strong** words surrounded by `**`, **emphasis** words surrounded by `*`, both will join cloze deletion. 
 
 > After cloze-deletion, it would look like:
 >
@@ -69,9 +69,9 @@ For example, there are four collection data types in the Python programming lang
 > 
 > If Strong words exists as well as list items, list items will be **ignored** for cloze-deletion.
 
-#### Table
+### Table
 
-By default, *table data will join cloze deletion.*
+By default, table **data** will join cloze deletion.
 
 Allowing table and table inside blockquote. Failed with table inside list due to python-markdown's limit.
 
@@ -79,7 +79,7 @@ For example, there are four collection data types in the Python programming lang
 
 | collection data types | ordered               | changeable   | duplicate |
 | --------------------- | --------------------- | ------------ | --------- |
-| List                  | ordered               | changeable   | allow     |
+| List                  | ordered               |              | allow     |
 | Tuple                 | ordered               | unchangeable | allow     |
 | Set                   | unordered (unindexed) | unchangeable | no        |
 | Dictionary            | ordered               | changeable   | no        |
