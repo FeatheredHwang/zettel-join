@@ -42,7 +42,7 @@ class MdJoint:
 
     model_name: str
     handling_file: str
-    # TODO !!! let's cancel 'handling_content'
+    # todo ? cancel 'handling_content'
     handling_content: str
     aimed_deck: str
     new_notes_count: int
@@ -246,6 +246,7 @@ class MdJoint:
             extensions.append(fenced_code_ext)
 
         html = markdown.markdown(content, extensions=extensions)
+        # todo standardize soup then, like warp the list if blockquote inside
         return BeautifulSoup(html, 'html.parser')
 
     def standardize_md(self, file: str = None, content: str = None) -> str:
@@ -255,10 +256,10 @@ class MdJoint:
         if self.config['emojis-encode']:
             # replace ':emoji-alia:' to emoji
             content = emojis.encode(content)
-        # TODO !!! other standardize jobs like:
+        # todo other standardize jobs like:
         #   todo what if no blank line before and after math blocks $$ signal? the render will return false result
         #   todo standard md file: no blank line inside list, even between p and blockquote tags inside li
-        #   todo not allow blockquote inside another blockquote
+        #   todo not allow blockquote inside another blockquote, or ,just ignore it
 
         if self.config['md-standardize']: self.write(file, content)
         return content
@@ -276,7 +277,7 @@ class MdJoint:
         :param heading:
         :param note_id:
         """
-        # TODO !!! NOW could it be possible that insert in html tree and at the end transfer html page back to md?
+        # todo could it be possible that insert in html tree and at the end transfer html page back to md?
         self.handling_content = re.sub(
             r'(\n*#+\s*{}\s*\n\n)'.format(heading.text),
             r'\1' + f'<!-- NoteId: {note_id} -->\n\n',
@@ -488,7 +489,7 @@ class ClozeJoint(MdJoint):
 
             # add note to deck, and the note object will get assigned with id
             mw.col.add_note(note, deck_id)
-            # TODO !!! NOW add comment to a dictionary, comment at the end of the file.
+            # todo add comment to a dictionary, comment at the end of the file.
             self.comment_noteid(heading, note.id)
             new_notes_count += 1
             logger.debug(f'Importing MD - Note added, note.id: {note.id}')

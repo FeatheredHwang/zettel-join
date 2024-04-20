@@ -1,7 +1,7 @@
 """
 Knowledge Base
 
-# TODO using GitPython to monitor changes and record each file's notetype
+# TODO !!! monitor changes, update notes
 # todo: Popup a process bar to show the process
 #   and stop user doing anything else before importation done.
 # mw.progress.start(max=1, parent=mw)
