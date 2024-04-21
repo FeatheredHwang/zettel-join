@@ -9,16 +9,16 @@ from dotenv import load_dotenv
 import markdown
 from markdown import Extension
 from markdown.extensions.tables import TableExtension
-# PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
+# pymdownx Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
 from pymdownx.emoji import EmojiExtension, to_alt
 from pymdownx.arithmatex import ArithmatexExtension
 from pymdownx.superfences import SuperFencesCodeExtension
 
 # load variables from .env file
-load_dotenv('../zettel_join/.env')
+load_dotenv('../zettel_join/test/.env')
 
 
-def transfer_mds_to_htmls():
+def transfer_md_to_html():
     """
     Transfer markdown files to html for parse convenience
     """
@@ -71,4 +71,4 @@ def transfer_mds_to_htmls():
 
 if __name__ == '__main__':
     print(f'CWD: {os.getcwd()}')
-    transfer_mds_to_htmls()
+    transfer_md_to_html()

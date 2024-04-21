@@ -13,7 +13,7 @@ import shutil
 from aqt import mw, gui_hooks
 from aqt.qt import QAction, qconnect
 
-from . import kb
+from zettel_join import kb
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,7 @@ import shutil
 from dotenv import load_dotenv
 
 # load variables from .env file
-load_dotenv('../zettel_join/.env')
+load_dotenv('../zettel_join/test/.env')
 addon_path = os.getenv('ADDON_PATH')
 anki_path = os.getenv('ANKI_PATH')
 
@@ -18,6 +18,7 @@ os.system("""tasklist | find /i "anki.exe" && ( taskkill /im "anki.exe" /f )""")
 os.system("""tasklist | find /i "mpv.exe" && ( taskkill /im "mpv.exe" /f )""")
 
 
+# noinspection PyUnusedLocal
 def ignore_pycache(path: str, names: list[str]) -> list[str]:
     """
     Filter out the __pycache__ directory
