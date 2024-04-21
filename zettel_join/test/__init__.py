@@ -32,15 +32,11 @@ def reset_test_kb():
     """
     Replace all the test md files in KB, with the original
     """
-    ex_dst_path = pathlib.Path(os.path.join(test_kasten_path, 'About this addon/MD examples/.backup'))
-    # if path not exist, create it
-    ex_dst_path.mkdir(parents=True, exist_ok=True)
-    # copy MD examples from the project dir, overwrite if file exists
-    shutil.copytree(md_ex_path, ex_dst_path, dirs_exist_ok=True)
-    # replace test files with the backup
-    for root, dirs, files in os.walk(test_kasten_path):
-        if root.endswith('.backup'):
-            shutil.copytree(root, os.path.dirname(root), dirs_exist_ok=True, ignore=shutil.ignore_patterns('*.html'))
+    # Add example MDs to the test kasten
+    dst_path = pathlib.Path(os.path.join(test_kasten_path, 'About this addon/MD examples'))
+    dst_path.mkdir(parents=True, exist_ok=True)  # create dir if path not exist
+    src_path = os.path.join(addon_path, 'ex')
+    shutil.copytree(src_path, dst_path, dirs_exist_ok=True)  # overwrite if file exists
 
 
 def remove_test_models():
