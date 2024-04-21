@@ -13,7 +13,7 @@ import shutil
 from aqt import mw, gui_hooks
 from aqt.qt import QAction, qconnect
 
-from zettel_join import kb
+from .. import kb
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 logger.debug(f'CWD: {os.getcwd()}')
 
 # loading variables from .env file
-dotenv.load_dotenv()
+dotenv.load_dotenv('./.env')
 
 TEST_MODE: bool = True
 test_kasten_path = os.getenv('TEST_KASTEN_PATH')
