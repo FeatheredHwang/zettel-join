@@ -24,8 +24,14 @@ env_ok = False
 dotenv_path: str = os.path.join(os.path.dirname(os.path.abspath(__file__)),  '.env')
 if not dotenv.load_dotenv(dotenv_path):  # loading variables from .env file
     logger.error('Importing test module: ".env" file missing, environment variable load failed.')
-test_kasten_path = os.getenv('TEST_KASTEN_PATH')
-addon_path = os.getenv('ADDON_PATH')
+else:
+    test_kasten_path = os.getenv('TEST_KASTEN_PATH')
+    addon_path = os.getenv('ADDON_PATH')
+    if test_kasten_path and addon_path:
+        logger.info('Importing test module: environment variable loaded.')
+        env_ok = True
+    else:
+        logger.error('Importing test module: environment variable missing.')
 
 
 def reset_test_kb():
