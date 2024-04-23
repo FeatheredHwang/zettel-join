@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 logger.debug(f'CWD: {os.getcwd()}')
 
 TEST_MODE: bool = True
-dotenv.load_dotenv('./.env')  # loading variables from .env file
+dotenv_path: str = os.path.join(os.path.dirname(os.path.abspath(__file__)),  '.env')
+if not dotenv.load_dotenv(dotenv_path):  # loading variables from .env file
+    logger.error('Importing test module: ".env" file missing, environment variable load failed.')
 test_kasten_path = os.getenv('TEST_KASTEN_PATH')
 addon_path = os.getenv('ADDON_PATH')
 
