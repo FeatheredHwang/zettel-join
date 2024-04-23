@@ -175,7 +175,8 @@ class MdJoint:
             img_tag['src'] = std_name
             # Anki will add basename of path to the media folder, renaming if not unique
             # which could be found under `%APPDATA%\Anki2`
-            if not mw.col.media.have(std_name): mw.col.media.addFile(std_img)
+            if not mw.col.media.have(std_name):
+                mw.col.media.addFile(std_img)
             logger.debug(f'Importing MD - add img success, img path "{std_name}"')
             # delete copied file
             os.remove(std_img)
@@ -242,7 +243,6 @@ class MdJoint:
         if self.config['fenced-code']:
             # add fenced_code extension
             fenced_code_ext = superfences.SuperFencesCodeExtension()
-            fenced_code_ext.config['css_class'] = ['BlahBlah', '']
             extensions.append(fenced_code_ext)
 
         html = markdown.markdown(content, extensions=extensions)
@@ -250,8 +250,10 @@ class MdJoint:
 
     def standardize_md(self, file: str = None, content: str = None) -> str:
 
-        if file: content = self.read(file)
-        if not content: return ''
+        if file:
+            content = self.read(file)
+        if not content:
+            return ''
         if self.config['emojis-encode']:
             # replace ':emoji-alia:' to emoji
             content = emojis.encode(content)
@@ -260,7 +262,8 @@ class MdJoint:
         #   todo standard md file: no blank line inside list, even between p and blockquote tags inside li
         #   todo not allow blockquote inside another blockquote
 
-        if self.config['md-standardize']: self.write(file, content)
+        if self.config['md-standardize']:
+            self.write(file, content)
         return content
 
     def standardize_field(self, field: str) -> str:
@@ -518,7 +521,8 @@ class ClozeJoint(MdJoint):
                 tag.decompose()
             elif tag.name not in ['p', 'ol', 'ul', 'div', 'table']:
                 tag.decompose()
-        if not heading_soup: return '', ''
+        if not heading_soup:
+            return '', ''
 
         # replace blockquote with the placeholder
         blockquote_tags = heading_soup.find_all('blockquote')
@@ -536,7 +540,8 @@ class ClozeJoint(MdJoint):
         cloze_tags += heading_soup.select('li') if not cloze_tags else []
         # todo rename the class attribute to 'math'
         cloze_math_tags = heading_soup.select('div.arithmatex') if self.config['math'] else []
-        if not cloze_tags and not cloze_math_tags: return '', ''
+        if not cloze_tags and not cloze_math_tags:
+            return '', ''
 
         # cloze deletion
         cloze_count = 0
