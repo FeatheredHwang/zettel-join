@@ -1,3 +1,7 @@
+---
+title: "Cloze Note Example"
+---
+
 # Cloze Note Example
 
 > [!TIP]

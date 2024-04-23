@@ -15,6 +15,10 @@ anki
 #   It helps in the development of applications following the 12-factor principles.
 python-dotenv
 
+# Python Frontmatter is a package to load and parse files (or text strings) with YAML front matter.
+# Documentation: https://python-frontmatter.readthedocs.io/en/latest/
+python-frontmatter
+
 # python-markdown is a text-to-HTML conversion tool for web writers.
 markdown
 # PyMdown Extensions is a collection of extensions for Python Markdown.

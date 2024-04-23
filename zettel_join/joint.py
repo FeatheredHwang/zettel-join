@@ -10,6 +10,7 @@
 """
 
 import emojis
+import frontmatter
 import logging
 import os
 import re
@@ -42,6 +43,7 @@ class MdJoint:
 
     model_name: str
     handling_file: str
+    handling_metadata: dict
     # TODO !!! let's cancel 'handling_content'
     handling_content: str
     aimed_deck: str
@@ -251,7 +253,9 @@ class MdJoint:
     def standardize_md(self, file: str = None, content: str = None) -> str:
 
         if file:
-            content = self.read(file)
+            post = frontmatter.loads(self.read(file))
+            content = post.content
+            self.handling_metadata = post.metadata
         if not content:
             return ''
         if self.config['emojis-encode']:

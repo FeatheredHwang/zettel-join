@@ -6,6 +6,7 @@ import pathlib
 import shutil
 from dotenv import load_dotenv
 
+import frontmatter
 import markdown
 from markdown import Extension
 from markdown.extensions.tables import TableExtension
@@ -58,9 +59,11 @@ def transfer_md_to_html():
             print(file)
             with open(os.path.join(root, file), mode='r', encoding='utf-8') as md_file:
                 # Read the entire content of the file
-                file_content = md_file.read()
+                # file_content = md_file.read()
+                post = frontmatter.load(md_file)
+                print(post.metadata)
                 print(f"File <{os.path.join(root, file)}> read successfully")
-            html_content = markdown.markdown(file_content, extensions=extensions)
+            html_content = markdown.markdown(post.content, extensions=extensions)
             with open(os.path.join(root, file + '.html'), 'w', encoding='utf-8') as md_file:
                 md_file.write(html_content)
                 print(f"File <{os.path.join(root, file + '.html')}> write successfully")
