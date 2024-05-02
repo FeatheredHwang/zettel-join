@@ -140,13 +140,11 @@ $$
 
 > [!WARNING]
 >
-> DO NOT use 'equation'  environment to replace 'align', or it will raise:
-> $$
-> \begin{equation}
-> x = x + 1					\label{eq1}\tag{1}	\\
-> \text{eggs} = \text{bacon}	\label{eq2}\tag{2}
-> \end{equation}
-> $$
+> DO NOT use 'equation' environment to replace 'align', or Typora will raise:
+>
+> ```
+> Error: Multiple \label
+> ```
 
 > [!Note]
 >
@@ -211,6 +209,11 @@ Emoji with syntax `:snake:` is supported, which would output :snake:
 ### :star:Mark note
 
 If you add ​`:star:`​/⭐ at the beginning of this heading (or upper level heading), the note generated from this heading will be **marked**. For example, the h1 heading is indicated as marked, then all the h2 and h3 headings that under the h1 heading will get marked too.
+
+### Line break
+
+To create a line break or new line (`<br>`), end a line with **two or more** spaces, and then type return.   
+In Typora if you type `shift + return` you will go to a new line rather than a new paragraph (after an empty line)
 
 ### To be continued...
 
