@@ -66,7 +66,7 @@ Look at the [examples](https://github.com/FeatheredHwang/zettel-join/tree/main/z
 
 #### One-click import
 
-When the add-on is downloaded, a `KBjoin` option will be added to the `Tools` menu. Click it and choose your Knowledge Base Location, and that's all.
+When the add-on is downloaded, a `ZK Join` option will be added to the `Tools` menu. Click it and choose your Knowledge Base Location, and that's all.
 
 ### Changelog
 

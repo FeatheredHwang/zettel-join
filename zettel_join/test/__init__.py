@@ -1,8 +1,8 @@
 """
 As long as this file imported, it is on test mode.
 For test convenience:
-- add a parallel "kb join test" to the tools menu
-- reset test kb and then join it as soon as Anki opened
+- add a parallel "ZK join test" to the tools menu
+- reset test ZK and then join it as soon as Anki opened
 - simulate user's edit to test_kasten then sync to notes
 """
 
@@ -15,7 +15,7 @@ import shutil
 from aqt import mw, gui_hooks
 from aqt.qt import QAction, qconnect
 
-from .. import kb
+from .. import zk
 
 
 logger = logging.getLogger(__name__)
@@ -34,9 +34,9 @@ else:
         logger.error('Importing test module: environment variable missing.')
 
 
-def reset_test_kb():
+def reset_test_zk():
     """
-    Replace all the test md files in KB, with the original
+    Replace all the test md files in ZK, with the original
     """
     # delete all the dirs except the hidden ones
     for d in os.listdir(test_kasten_path):
@@ -63,11 +63,11 @@ def remove_test_models():
     mm.remove(mm.id_for_name('Oneside (test)'))
 
 
-def join_test_kb():
+def join_test_zk():
     """
     Join your TEST knowledge base to Anki
     """
-    kb.KnowledgeBase(top_dir=test_kasten_path, test_mode=True).join()
+    zk.ZettelKasten(path=test_kasten_path, test_mode=True).join()
 
 
 def output_model():
@@ -104,7 +104,7 @@ def md2notes_sync():
     Update the sync-test md files in all levels.
     """
     do_file_edit()
-    join_test_kb()
+    join_test_zk()
 
 
 def add_menu_item(label: str, func: callable):
@@ -120,11 +120,11 @@ def add_menu_item(label: str, func: callable):
 
 if env_ok:
     # add gui_hooks
-    gui_hooks.profile_did_open.append(reset_test_kb)
+    gui_hooks.profile_did_open.append(reset_test_zk)
     gui_hooks.profile_did_open.append(remove_test_models)
-    gui_hooks.profile_did_open.append(join_test_kb)
+    gui_hooks.profile_did_open.append(join_test_zk)
     gui_hooks.profile_will_close.append(remove_test_models)
     # add menu item
-    add_menu_item('KB Join (test)', join_test_kb)
+    add_menu_item('ZK Join (test)', join_test_zk)
     add_menu_item('output Model (test)', output_model)
     add_menu_item('md2notes sync (test)', md2notes_sync)
