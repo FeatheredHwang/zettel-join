@@ -15,7 +15,7 @@ import shutil
 from aqt import mw, gui_hooks
 from aqt.qt import QAction, qconnect
 
-from .. import zk
+from .. import joint
 
 
 logger = logging.getLogger(__name__)
@@ -67,13 +67,12 @@ def join_test_zk():
     """
     Join your TEST knowledge base to Anki
     """
-    zk.ZettelKasten(path=test_kasten_path, test_mode=True).join()
+    joint.join(path=test_kasten_path, test_mode=True)
 
 
 def output_model():
     """
     logging model dictionary for look-through convenience
-    # todo write to file rather than logging, do not use logging in test modules
     """
     logger.info('\n' +
                 str(mw.col.models.by_name('Cloze traceable (test)'))

@@ -13,7 +13,7 @@ from anki.utils import version_with_build, int_version
 from . import log
 # download package to local library
 from . import modules
-from . import zk
+from . import joint
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ def zk_join():
     """
     Join your knowledge base to Anki
     """
-    zk.ZettelKasten().join()
+    joint.join()
 
 
 # create a new menu item
