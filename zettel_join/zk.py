@@ -23,11 +23,9 @@ class ZettelKasten:
     ZettelKästen
     """
     path: str = None
-    test_mode: bool = False
 
-    def __init__(self, path: str = None, test_mode: bool = False):
+    def __init__(self, path: str = None):
         logger.debug(f'CWD - current working directory: {os.getcwd()}')
-        self.test_mode = test_mode
         self.get_zk(path)
 
     def get_zk(self, path: str = None):
