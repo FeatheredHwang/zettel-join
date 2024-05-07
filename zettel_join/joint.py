@@ -39,6 +39,7 @@ class MdJoint(Joint):
     model_name: str = None
 
     def __init__(self):
+        super().__init__()
         self.new_notes_count = 0
         gui_hooks.profile_did_open.append(self.create_model)
         ...
@@ -155,6 +156,8 @@ class ClozeJoint(MdJoint):
             if not joinable:
                 logger.debug(f'ZK join: Skip dir "{rel_path}" since no files to import here.')
                 continue
+            elif depth > 3:
+                logger.warning(f'ZK join: current working dir is "{depth}-level-deep" in zk, which is not recommended.')
             # join file to deck
             deck_name: str = rel_path.replace(os.sep, '::') if rel_path != '.' else 'Default'
             logger.debug(f'ZK join: to deck "{deck_name}"')
@@ -167,7 +170,7 @@ class ClozeJoint(MdJoint):
 
 
 # Add joints in this function, manually
-JOINTS: dict[str: MdJoint] = {
+JOINTS: dict[str: Joint] = {
     ClozeJoint.model_name: ClozeJoint(),
 }
 
