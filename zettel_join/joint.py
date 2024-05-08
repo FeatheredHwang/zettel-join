@@ -33,27 +33,13 @@ class Joint:
 
 
 class MdJoint(Joint):
-    zk: ZettelKasten = None
-    model: Model = None
-    model_name: str = 'Basic'
 
     def __init__(self):
         super().__init__()
-        self.new_notes_count = 0
-        gui_hooks.profile_did_open.append(self.create_model)
-        ...
-
-    def check_model(self) -> bool:
-        ...
-
-    def create_model(self, model_name: str = None):
         ...
 
     def join(self, zk: ZettelKasten = None, test_mode: bool = False):
-        self.zk = zk
-        if test_mode:
-            self.create_model(self.model_name + ' (test)')
-        joinables = self.get_joinables()
+        ...
 
     @staticmethod
     def read(file: str) -> str:
