@@ -61,18 +61,39 @@ class MdJoint(Joint):
 
     def load(self, file: str) -> frontmatter.Post:
         post = frontmatter.loads(self.read(file))
+        logger.debug(f'File load: frontmatter metadata of file "{file}" is {post.metadata}')
         return post
 
 
 class ClozeJoint(MdJoint):
+    zk: ZettelKasten = None
+    model: Model = None
     model_name: str = 'ZK cloze'
 
     def __init__(self):
         super().__init__()
+        self.new_notes_count = 0
+        gui_hooks.profile_did_open.append(self.check_model)
+
+    def check_model(self, model_name: str = None) -> bool:
+        """
+        verify if model exists, create model if not
+        :return: False while error happens, otherwise True
+        """
+        model_name = model_name if model_name else self.model_name
+        if model_name is None:
+            logger.error('Create model: cancelled, model name is None.')
+            return False
+        m = mw.col.models.byName(self.model_name)
+        if m:
+            logger.info(f'Create model: model already exists, model name"{self.model_name}"')
+            self.model = m
+            return True
+        else:
+            self.create_model(model_name=model_name)
+            return True
 
     def create_model(self, model_name: str = None):
-        if self.check_model():
-            return
         model_name = self.model_name if not model_name else model_name
         logger.info(f'Create model: begin, model name "{model_name}"')
         # create model if not exist
@@ -102,7 +123,7 @@ class ClozeJoint(MdJoint):
         # Add the Model (NoteTypeDict) to Anki
         mm.add_dict(notetype=m)
         self.model = mm.by_name(model_name)
-        logger.info(f'Create model: done, model name "{model_name}"')
+        logger.info(f'Create model: Done, model name "{model_name}"')
 
     def join(self, zk: ZettelKasten = None, test_mode: bool = False):
         self.zk = zk
@@ -129,8 +150,6 @@ class ClozeJoint(MdJoint):
             if not joinables:
                 logger.debug(f'ZK join: Skip dir "{rel_path}" since no files to import here.')
                 continue
-            elif depth > 3:
-                logger.warning(f'ZK join: current working dir is "{depth}-level-deep" in zk, which is not recommended.')
             # join file to deck
             deck_name: str = rel_path.replace(os.sep, '::') if rel_path != '.' else 'Default'
             logger.debug(f'ZK join: Current dir "{rel_path}", to the deck "{deck_name}"')
