@@ -3,9 +3,7 @@
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
 
 """
-
 A joint is an import handler, which corresponds to a special file-format as well as a model.
-
 """
 
 
@@ -37,7 +35,7 @@ class Joint:
 class MdJoint(Joint):
     zk: ZettelKasten = None
     model: Model = None
-    model_name: str = None
+    model_name: str = 'Basic'
 
     def __init__(self):
         super().__init__()
@@ -48,7 +46,7 @@ class MdJoint(Joint):
     def check_model(self) -> bool:
         ...
 
-    def create_model(self):
+    def create_model(self, model_name: str = None):
         ...
 
     def join(self, zk: ZettelKasten = None, test_mode: bool = False):
@@ -94,13 +92,14 @@ class ClozeJoint(MdJoint):
     def __init__(self):
         super().__init__()
 
-    def create_model(self):
+    def create_model(self, model_name: str = None):
         if self.check_model():
             return
-        logger.info(f'Create model: begin, model name "{self.model_name}"')
+        model_name = self.model_name if not model_name else model_name
+        logger.info(f'Create model: begin, model name "{model_name}"')
         # create model if not exist
         mm: ModelManager = mw.col.models
-        m: Model = mm.new(self.model_name)
+        m: Model = mm.new(model_name)
         fields: list[str] = [
             'file',
             'header',  # used to traceback to sections in the book
@@ -124,8 +123,8 @@ class ClozeJoint(MdJoint):
         m['css'] = self.read('tpl/cloze.css')
         # Add the Model (NoteTypeDict) to Anki
         mm.add_dict(notetype=m)
-        self.model = mm.by_name(self.model_name)
-        logger.info(f'Create model: done, model name "{self.model_name}"')
+        self.model = mm.by_name(model_name)
+        logger.info(f'Create model: done, model name "{model_name}"')
 
     def check_model(self) -> bool:
         """
