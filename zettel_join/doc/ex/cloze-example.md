@@ -1,4 +1,5 @@
 ---
+note-type: cloze
 title: "Cloze Note Example"
 ---
 
@@ -166,11 +167,27 @@ User defined tags will be supported in the future.
 
 Due to ["Use mnemonic techniques" rule](https://www.supermemo.com/en/blog/twenty-rules-of-formulating-knowledge)...
 
+
+
 ### No cloze-deletion found
 
 If there is no cloze-deletion found under the heading, it won't create any note for this note.
 
+
+
 ## Features
+
+### Frontmatter
+
+Frontmatter at the front of the file will be rendered separately from file content. For example:
+
+```
+---
+note-type: cloze
+---
+```
+
+For now, frontmatter is used to indicate which note-type should the MD file mirror to.
 
 ### Extra info
 

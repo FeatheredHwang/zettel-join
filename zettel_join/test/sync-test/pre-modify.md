@@ -1,6 +1,8 @@
 ---
-
+note-type: cloze
 ---
+
+
 
 # Modify MD Test
 
