@@ -21,7 +21,7 @@ from .. import joint
 logger = logging.getLogger(__name__)
 
 env_ok = False
-dotenv_path: str = os.path.join(os.path.dirname(os.path.abspath(__file__)),  '.env')
+dotenv_path: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
 if not dotenv.load_dotenv(dotenv_path):  # loading variables from .env file
     logger.error('Importing test module: ".env" file missing, environment variable load failed.')
 else:
@@ -45,7 +45,7 @@ def reset_test_zk():
     # Add example MDs to the test kasten
     dst_path = pathlib.Path(os.path.join(test_kasten_path, 'About this addon/MD examples'))
     dst_path.mkdir(parents=True, exist_ok=True)  # create dir if path not exist
-    src_path = os.path.join(addon_path, 'ex')
+    src_path = os.path.join(addon_path, 'doc/ex')
     shutil.copytree(src_path, dst_path, dirs_exist_ok=True)  # overwrite if file exists
     # Add sync-test MDs to the test kasten
     dst_path = pathlib.Path(os.path.join(test_kasten_path, 'sync-test/pre-edit'))

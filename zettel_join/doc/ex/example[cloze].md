@@ -196,7 +196,7 @@ Allowing both Markdown syntax `![alt](src)` and HTML syntax `<img src="src" alt=
 
 For example:
 
-![forest](./.assets/forest.jpg)
+![forest](.assetsorest.jpg)
 
 > Photos by [Luca Bravo](https://unsplash.com/@lucabravo), free to use under the [Unsplash License](https://unsplash.com/license)
 
