@@ -8,6 +8,8 @@ A joint is an import handler, which corresponds to a special file-format as well
 
 """
 
+
+import frontmatter
 import os
 import logging
 
@@ -34,7 +36,6 @@ class Joint:
 
 class MdJoint(Joint):
     zk: ZettelKasten = None
-    test_mode: bool = False
     model: Model = None
     model_name: str = None
 
@@ -52,6 +53,9 @@ class MdJoint(Joint):
 
     def join(self, zk: ZettelKasten = None, test_mode: bool = False):
         self.zk = zk
+        if test_mode:
+            self.create_model(self.model_name + ' (test)')
+        joinables = self.get_joinables()
 
     def get_file(self):
         ...
@@ -78,6 +82,10 @@ class MdJoint(Joint):
         except IOError as e:
             logger.error(f'File read: error, {e}, filepath "{file}"')
         return ''
+
+    def load(self, file: str) -> frontmatter.Post:
+        post = frontmatter.loads(self.read(file))
+        return post
 
 
 class ClozeJoint(MdJoint):
@@ -164,8 +172,23 @@ class ClozeJoint(MdJoint):
             for file in joinable:
                 ...
 
-    def check_file(self, path: str):
-        # todo check file suitable to current Joint
+    def check_joinable(self, file: str) -> bool:
+        """
+        check file joinable by current Joint
+        :param file: file path
+        :return: True if joinable, otherwise False
+        """
+        post: frontmatter.Post = self.load(file)
+        logger.debug(post.metadata)
+        try:
+            note_type = post['note-type']
+        except KeyError:  # note-type key not exists
+            # TODO record
+            note_type = ''
+        if note_type == self.model_name:
+            return True
+        return False
+        # TODO
         ...
 
 
