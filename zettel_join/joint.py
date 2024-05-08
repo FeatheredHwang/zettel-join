@@ -55,14 +55,6 @@ class MdJoint(Joint):
             self.create_model(self.model_name + ' (test)')
         joinables = self.get_joinables()
 
-    def get_file(self):
-        ...
-
-    traverse = get_file
-
-    def check_file(self, path: str):
-        ...
-
     @staticmethod
     def read(file: str) -> str:
         """
@@ -126,25 +118,12 @@ class ClozeJoint(MdJoint):
         self.model = mm.by_name(model_name)
         logger.info(f'Create model: done, model name "{model_name}"')
 
-    def check_model(self) -> bool:
-        """
-        verify if model exists
-        :return: True if it does, otherwise False
-        """
-        if self.model_name is None:
-            logger.error('Create model: model name is None.')
-            return True
-        m = mw.col.models.byName(self.model_name)
-        if m:
-            logger.info(f'Create model: model already exists, model name"{self.model_name}"')
-            return True
-        else:
-            return False
-
-    def get_file(self):
-        """
-        Traverse the directory
-        """
+    def join(self, zk: ZettelKasten = None, test_mode: bool = False):
+        self.zk = zk
+        if test_mode:
+            self.model_name += ' (test)'
+            self.check_model(self.model_name)
+        # Traverse the directory
         for root, dirs, files in os.walk(self.zk.path):
             # !Attention! dirs and files are just basename without path
             # Filter out hidden directories and hidden files
@@ -152,23 +131,28 @@ class ClozeJoint(MdJoint):
             files = [f for f in files if not f.startswith('.')]
             # Get the relative path of the current directory, and its depth from top dir
             rel_path = os.path.relpath(root, self.zk.path)
-            depth = 0 if rel_path == '.' else len(rel_path.split(os.sep))  # os.sep is '\'
+            joinables: list[str] = []
             # Find out files which is able to join
-            joinable: list[str] = []
             for file in files:
                 file = os.path.join(root, file)  # get the complete path
-                if self.check_file(file):
-                    joinable.append(file)
+                logger.critical(self.check_joinable(file))
+                if self.check_joinable(file):
+                    joinables.append(file)
             # Skip to next folder if no join-task exists
-            if not joinable:
+            logger.critical(joinables)
+            if not joinables:
                 logger.debug(f'ZK join: Skip dir "{rel_path}" since no files to import here.')
                 continue
             elif depth > 3:
                 logger.warning(f'ZK join: current working dir is "{depth}-level-deep" in zk, which is not recommended.')
             # join file to deck
             deck_name: str = rel_path.replace(os.sep, '::') if rel_path != '.' else 'Default'
-            logger.debug(f'ZK join: to deck "{deck_name}"')
-            for file in joinable:
+            logger.debug(f'ZK join: Current dir "{rel_path}", to the deck "{deck_name}"')
+            depth = 0 if rel_path == '.' else len(rel_path.split(os.sep))  # os.sep is '\'
+            if depth > 3:
+                logger.warning(f'ZK join: bad practise, current working dir is "{depth}-level-deep" in zk.')
+            for file in joinables:
+                logger.debug(f'ZK join: ')
                 ...
 
     def check_joinable(self, file: str) -> bool:
@@ -178,17 +162,20 @@ class ClozeJoint(MdJoint):
         :return: True if joinable, otherwise False
         """
         post: frontmatter.Post = self.load(file)
-        logger.debug(post.metadata)
+        # try to fetch 'note-type'
+        note_type: str
         try:
-            note_type = post['note-type']
+            note_type = str(post['note-type'])
+            logger.debug(f'ZK join: in the frontmatter of file "{file}", "note-type" is {note_type}.')
+            # judge if match current joint
+            if note_type == self.model_name or \
+                    note_type in self.model_name:
+                return True
+            else:
+                return False
         except KeyError:  # note-type key not exists
-            # TODO record
-            note_type = ''
-        if note_type == self.model_name:
-            return True
-        return False
-        # TODO
-        ...
+            logger.debug(f'ZK join: "note-type" metadata missing in the frontmatter of file "{file}".')
+            return False
 
 
 # Add joints in this function, manually
