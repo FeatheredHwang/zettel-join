@@ -6,6 +6,7 @@
 A joint is an import handler, which corresponds to a special file-format as well as a model.
 """
 
+import copy
 import emojis
 import frontmatter
 import os
@@ -247,12 +248,28 @@ class ClozeJoint(MdJoint):
         html = markdown.markdown(content, extensions=extensions)
         return BeautifulSoup(html, 'html.parser')
 
-    def get_heading_scope(self, heading: Tag, recursive: bool = False) -> BeautifulSoup:
+    """ ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
+    note-level
+    """
+
+    HEADING_TAGS: list[str] = [f'h{n}' for n in range(1, 6)]
+
+    def join_note(self, heading: Tag) -> None:
         """
-        get the heading scope of soup from the parse tree
+        Join MD file sections to Anki notes
+        :param heading: heading tag from the parse tree
+        """
+        # deck_id: DeckId = mw.col.decks.id(deck_name)
+        note_scope: BeautifulSoup = self.get_note_scope(heading)
+
+        ...
+
+    def get_note_scope(self, heading: Tag, recursive: bool = False) -> BeautifulSoup:
+        """
+        get the note scope of soup from the parse tree (a header corresponds to a note)
         :param heading: heading tag from the parse tree
         :param recursive: if True, include subheadings with their content
-        :return:
+        :return: BeautifulSoup of the note scope
         """
         # check tag name
         if heading.name not in self.HEADING_TAGS:
@@ -263,25 +280,13 @@ class ClozeJoint(MdJoint):
         else:
             stop = self.HEADING_TAGS
         stop.append('hr')  # <hr> tag is also one of stop tag
-        # generate soup from siblings' text
-        text: str = ''
+        # generate heading/note scope
+        note_scope: BeautifulSoup = BeautifulSoup('', 'html.parser')
         sibling = heading.find_next_sibling()  # !Attention!: .next_sibling might return NavigableString
         while sibling and sibling.name not in stop:
-            text += str(sibling)
+            note_scope.append(copy.copy(sibling))
             sibling = sibling.find_next_sibling()
-        return BeautifulSoup(text, 'html.parser')
-
-    """
-    ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
-    note-level
-    """
-
-    HEADING_TAGS: list[str] = [f'h{n}' for n in range(1, 6)]
-
-    def join_note(self):
-        # deck_id: DeckId = mw.col.decks.id(deck_name)
-
-        ...
+        return note_scope
 
     def parse_media(self, soup: BeautifulSoup) -> None:
         ...
