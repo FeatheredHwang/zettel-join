@@ -12,7 +12,7 @@ import os
 import logging
 import markdown
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from markdown.extensions import tables
 from pymdownx import arithmatex, superfences
 
@@ -148,7 +148,7 @@ class ClozeJoint(MdJoint):
             # !Attention! dirs and files are just basename without path
             # Filter out hidden directories, hidden or non-MD files
             dirs[:] = [d for d in dirs if not d.startswith('.')]
-            files = [f for f in files if f.endswith('.md') and not f.startswith('.')]
+            files = [f for f in files if f.endswith(self.FILE_TYPE) and not f.startswith('.')]
             # Get the relative path of the current directory
             rel_dir = os.path.relpath(root, self.zk.path)
             if not files:
@@ -171,6 +171,8 @@ class ClozeJoint(MdJoint):
     file-level
     """
 
+    FILE_TYPE = '.md'
+
     def join_file(self, abs_file: str, rel_dir: str = None):
         """
         :param abs_file: The absolute path of the file to join
@@ -184,7 +186,10 @@ class ClozeJoint(MdJoint):
         # join md note
         post.content = self.standardize(post.content)
         soup: BeautifulSoup = self.make_soup(post.content)
-
+        new_notes_count: int = 0
+        # Traverse headings
+        for heading in soup.find_all(self.HEADING_TAGS):
+            note_soup: BeautifulSoup = self.get_heading_scope(heading)
         ...
 
     def check_joinable(self, post: frontmatter.Post) -> bool:
@@ -242,13 +247,36 @@ class ClozeJoint(MdJoint):
         html = markdown.markdown(content, extensions=extensions)
         return BeautifulSoup(html, 'html.parser')
 
-    def get_note_scope(self, soup: BeautifulSoup) -> BeautifulSoup:
-        ...
+    def get_heading_scope(self, heading: Tag, recursive: bool = False) -> BeautifulSoup:
+        """
+        get the heading scope of soup from the parse tree
+        :param heading: heading tag from the parse tree
+        :param recursive: if True, include subheadings with their content
+        :return:
+        """
+        # check tag name
+        if heading.name not in self.HEADING_TAGS:
+            raise ValueError(f'heading tag supposed, but <{heading.name}> tag get')
+        # setup stop condition (while encounter the specific tag, stop parsing)
+        if recursive:
+            stop = self.HEADING_TAGS[:self.HEADING_TAGS.index(heading.name) + 1]
+        else:
+            stop = self.HEADING_TAGS
+        stop.append('hr')  # <hr> tag is also one of stop tag
+        # generate soup from siblings' text
+        text: str = ''
+        sibling = heading.find_next_sibling()  # !Attention!: .next_sibling might return NavigableString
+        while sibling and sibling.name not in stop:
+            text += str(sibling)
+            sibling = sibling.find_next_sibling()
+        return BeautifulSoup(text, 'html.parser')
 
     """
     ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
     note-level
     """
+
+    HEADING_TAGS: list[str] = [f'h{n}' for n in range(1, 6)]
 
     def join_note(self):
         # deck_id: DeckId = mw.col.decks.id(deck_name)
