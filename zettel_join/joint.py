@@ -112,8 +112,7 @@ class ClozeJoint(MdJoint):
         mm: ModelManager = mw.col.models
         m: Model = mm.new(model_name)
         fields: list[str] = [
-            'file',
-            'header',  # used to traceback to sections in the book
+            'root',  # the header path inside MD file
             'Text',
             'Extra',
         ]
@@ -192,13 +191,13 @@ class ClozeJoint(MdJoint):
         soup: BeautifulSoup = self.make_soup(post.content)
         new_notes_count: int = 0
         # Traverse headings
-        for heading in soup.find_all(self.HEADING_TAGS):
+        for heading in soup.find_all(self.HEADING_TAG_NAMES):
             self.join_note(heading, deck_id)
         ...
 
     def check_joinable(self, post: frontmatter.Post) -> bool:
         """
-        is post joinable to current Joint
+        Check the frontmatter metadata, see if joinable with current Joint
         :param post: frontmatter.Post
         :return: True if joinable, otherwise False
         """
@@ -255,7 +254,7 @@ class ClozeJoint(MdJoint):
     note-level
     """
 
-    HEADING_TAGS: list[str] = [f'h{n}' for n in range(1, 7)]
+    HEADING_TAG_NAMES: list[str] = [f'h{n}' for n in range(1, 7)]
 
     def join_note(self, note_heading: Tag, deck_id: DeckId) -> int:
         """
@@ -264,15 +263,22 @@ class ClozeJoint(MdJoint):
         :param deck_id: The ID of the deck where the MD file is joined to
         :return: How many notes joined
         """
-        note_scope: BeautifulSoup = self.get_note_scope(note_heading)
         # get heading root (heading path)
-        root_field = self.get_root_field(note_heading)
+        root_field = self.parse_root_field(note_heading)
         logger.debug(f'Importing MD - get heading: "{root_field}"')
         # Check if the note has been imported (commented with note_id)
         noteid = self.get_commented_noteid(note_heading)
         if noteid:
             logger.debug(f'Note-join: note already imported: "{root_field}"')
             return 0
+        # parse note scope
+        note_scope: BeautifulSoup = self.get_note_scope(note_heading)
+        extra_field_scope = self.parse_extra_field_scope(note_scope)
+        text_field_scope = self.parse_text_field_scope(note_scope)
+        cloze_count = self.do_cloze_deletion(text_field_scope)
+        if cloze_count:
+            self.do_media_import(extra_field_scope)
+            self.do_media_import(text_field_scope)
         ...
 
     def get_note_scope(self, note_heading: Tag, recursive: bool = False) -> BeautifulSoup:
@@ -280,66 +286,113 @@ class ClozeJoint(MdJoint):
         get the note scope of soup from the parse tree (a header corresponds to a note)
         :param note_heading: heading bs4-tag from the parse tree, which corresponds to Anki-note
         :param recursive: if True, include subheadings with their content
-        :return: BeautifulSoup instance of the note scope
+        :return: BeautifulSoup instance of the note scope, note-heading excluded
         """
         # check tag name
-        if note_heading.name not in self.HEADING_TAGS:
+        if note_heading.name not in self.HEADING_TAG_NAMES:
             raise ValueError(f'heading tag supposed, but <{note_heading.name}> tag get')
         # setup stop condition (while encounter the specific tag, stop parsing)
         if recursive:
-            stop = self.HEADING_TAGS[:self.HEADING_TAGS.index(note_heading.name) + 1]
+            stop = self.HEADING_TAG_NAMES[:self.HEADING_TAG_NAMES.index(note_heading.name) + 1]
         else:
-            stop = self.HEADING_TAGS
+            stop = self.HEADING_TAG_NAMES
         stop.append('hr')  # <hr> tag is also one of stop tag
         # generate heading/note scope
         note_scope: BeautifulSoup = BeautifulSoup('', 'html.parser')
-        sibling = note_heading
+        sibling = note_heading.next_sibling  # !Attention! .next_sibling might return NavigableString
         while sibling and sibling.name not in stop:
-            sibling = sibling.next_sibling  # !Attention! .next_sibling might return NavigableString
             if sibling.name in stop:
                 break
             note_scope.append(copy.copy(sibling))
+            sibling = sibling.next_sibling
         return note_scope
 
-    def parse_media(self, soup: BeautifulSoup) -> None:
-        """
-        Import media file to Anki collection (media folder).
-        :param soup: BeautifulSoup object of note scope
-        :return:
-        """
-        ...
-
-    def get_root_field(self, note_heading: Tag) -> str:
-        index = self.HEADING_TAGS.index(note_heading.name)
+    def parse_root_field(self, note_heading: Tag) -> str:
+        index = self.HEADING_TAG_NAMES.index(note_heading.name)
         heading_strs: list[str] = []
         for n in range(index):
-            heading_strs.append(note_heading.find_previous_sibling(self.HEADING_TAGS[n]).text)
+            heading_strs.append(note_heading.find_previous_sibling(self.HEADING_TAG_NAMES[n]).text)
         return '.'.join(heading_strs)
 
     @staticmethod
-    def get_extra_field(note_scope: BeautifulSoup) -> str:
+    def parse_extra_field_scope(note_scope: BeautifulSoup) -> BeautifulSoup:
         """
-        extract the blockquote tags to extra field
+        Extract the blockquote tags to extra field
         :param note_scope: BeautifulSoup instance of the note scope
-        :return: extra field string
+        :return: BeautifulSoup instance of extra field scope
         """
-        extra_field = ''
+        extra_field_scope: BeautifulSoup = BeautifulSoup()
         # Find all the blockquote tags, join them as the extra field
         for tag in note_scope.find_all('blockquote', recursive=False):
-            extra_field += str(tag.extract())
-        return extra_field
+            extra_field_scope.append(tag)
+        return extra_field_scope
 
-    def get_text_field(self, soup: BeautifulSoup) -> str:
-        ...
-
-    def parse_cloze_deletion(self, soup: BeautifulSoup) -> BeautifulSoup:
-        ...
+    @staticmethod
+    def parse_text_field_scope(note_scope: BeautifulSoup) -> BeautifulSoup:
+        """
+        Parse the text field scope
+        :param note_scope: BeautifulSoup instance of the note scope
+        :return: BeautifulSoup instance of text field scope
+        """
+        # check if blockquote tags has been extracted
+        bq_tags = note_scope.find_all('blockquote', recursive=False)
+        if bq_tags:
+            for tag in bq_tags:
+                tag.decompose()
+            logger.warning(f'Note-join: blockquote tags decomposed (without included in "Extra" field)')
+        return note_scope
 
     def comment_noteid(self) -> str:
         ...
 
     def get_commented_noteid(self, note_heading: Tag) -> NoteId:
         ...
+
+    def do_media_import(self, soup: BeautifulSoup) -> int:
+        """
+        Import media file to Anki collection (media folder).
+        :param soup: BeautifulSoup object of note scope
+        :return: How many media files imported
+        """
+        ...
+
+    """ ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
+    cloze-level
+    """
+
+    @staticmethod
+    def do_cloze_deletion(cloze_scope: BeautifulSoup) -> int:
+        """
+        Do cloze-deletion on the text field
+        :param cloze_scope: BeautifulSoup instance of the note scope
+        :return: How many cloze-deletions were made
+        """
+        # replace blockquote tags with the placeholder
+        blockquote_tags = cloze_scope.find_all('blockquote')
+        ph_count = 0
+        for bq_tag in blockquote_tags:
+            ph_count += 1
+            ph_tag = cloze_scope.new_tag('blockquote')
+            ph_tag['id'] = f'ph-{ph_count}'
+            bq_tag.replace_with(ph_tag)
+        # find all cloze-deletion, avoid including child tag, skip if empty
+        cloze_tags: ResultSet = cloze_scope.find_all(['strong', 'em', 'td', 'li'])
+        cloze_math_tags: ResultSet = cloze_scope.select('div.arithmatex')
+        if not cloze_tags and not cloze_math_tags:
+            return 0
+        # cloze deletion
+        cloze_count = 0
+        for cloze_tag in cloze_tags:
+            if cloze_tag.string == '':  # skip empty tag
+                continue
+            if len(cloze_tag.contents) > 1:  # skip if including child tag
+                continue
+            cloze_count += 1
+            cloze_tag.string = '{{c' + str(cloze_count) + ':: ' + cloze_tag.string + '}}'
+        for cloze_math_tag in cloze_math_tags:
+            cloze_count += 1
+            cloze_math_tag.string = '\\[\n{{c' + str(cloze_count) + ':: ' + cloze_math_tag.string[3:-3] + ' }}\n\\]'
+        return cloze_count
 
 
 """ ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
