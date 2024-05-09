@@ -11,6 +11,7 @@ import frontmatter
 import os
 import logging
 
+from bs4 import BeautifulSoup
 
 from aqt import mw, gui_hooks
 from aqt.utils import showInfo
@@ -28,7 +29,7 @@ class Joint:
     def __init__(self):
         ...
 
-    def join(self, zk: ZettelKasten = None, test_mode: bool = False):
+    def join_zk(self, zk: ZettelKasten = None, test_mode: bool = False):
         ...
 
 
@@ -38,7 +39,7 @@ class MdJoint(Joint):
         super().__init__()
         ...
 
-    def join(self, zk: ZettelKasten = None, test_mode: bool = False):
+    def join_zk(self, zk: ZettelKasten = None, test_mode: bool = False):
         ...
 
     @staticmethod
@@ -69,6 +70,10 @@ class ClozeJoint(MdJoint):
     zk: ZettelKasten = None
     model: Model = None
     model_name: str = 'ZK cloze'
+
+    """
+    Initialize
+    """
 
     def __init__(self):
         super().__init__()
@@ -125,7 +130,12 @@ class ClozeJoint(MdJoint):
         self.model = mm.by_name(model_name)
         logger.info(f'Create model: Done, model name "{model_name}"')
 
-    def join(self, zk: ZettelKasten = None, test_mode: bool = False):
+    """
+    ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+    ZK-level
+    """
+
+    def join_zk(self, zk: ZettelKasten = None, test_mode: bool = False):
         self.zk = zk
         if test_mode:
             self.model_name += ' (test)'
@@ -133,51 +143,48 @@ class ClozeJoint(MdJoint):
         # Traverse the zk
         for root, dirs, files in os.walk(self.zk.path):
             # !Attention! dirs and files are just basename without path
-            # Filter
-            dirs[:] = self.filter_dirs(dirs)
-            files = self.filter_files(files)
+            # Filter out hidden directories, hidden or non-MD files
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            files = [f for f in files if f.endswith('.md') and not f.startswith('.')]
             # Get the relative path of the current directory
             rel_dir = os.path.relpath(root, self.zk.path)
             if not files:
                 logger.debug(f'ZK join: Skip folder {rel_dir} since no MD files included.')
                 continue
+            # Generate deck_name
+            deck_name: str = rel_dir.replace(os.sep, '::') if rel_dir != '.' else 'Default'
+            logger.debug(f'ZK join: Current dir "{rel_dir}", to the deck "{deck_name}"')
+            # Calculate depth, warning if depth > 3
+            depth = 0 if rel_dir == '.' else len(rel_dir.split(os.sep))  # os.sep is '\'
+            if depth > 3:
+                logger.warning(f'ZK join: bad practise, current working dir is "{depth}-level-deep" in zk.')
             # Traverse the files
-            joinable_count: int = 0
-            deck_name: str = 'Default'
             for file in files:
                 abs_file = os.path.join(root, file)  # get the abs path
-                post = self.load(file)
-                # Skip to next file if not joinable
-                if not self.check_joinable(post):
-                    logger.debug(f'ZK join: Skip file "{rel_dir}/{file}" since not joinable.')
-                    continue
-                joinable_count += 1
-                if joinable_count == 1:
-                    # generate deck_name
-                    deck_name = rel_dir.replace(os.sep, '::') if rel_dir != '.' else 'Default'
-                    logger.debug(f'ZK join: Current dir "{rel_dir}", to the deck "{deck_name}"')
-                    # Calculate depth, warning if depth > 3
-                    depth = 0 if rel_dir == '.' else len(rel_dir.split(os.sep))  # os.sep is '\'
-                    if depth > 3:
-                        logger.warning(f'ZK join: bad practise, current working dir is "{depth}-level-deep" in zk.')
-                # join md note
-                post.content = self.standardize(post.content)
-                ...
+                self.join_file(abs_file, rel_dir)
 
-    @staticmethod
-    def filter_dirs(dirs: list[str]) -> list[str]:
-        # Filter out hidden directories
-        return [d for d in dirs if not d.startswith('.')]
+    """
+    ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+    file-level
+    """
 
-    @staticmethod
-    def filter_files(files: list[str]) -> list[str]:
-        # Filter out hidden and non-MD files
-        files = [f for f in files if f.endswith('.md') and not f.startswith('.')]
-        return files
+    def join_file(self, abs_file: str, rel_dir: str = None):
+        """
+        :param abs_file: The absolute path of the file to join
+        :param rel_dir: The relative path of the directory to zk folder
+        """
+        post = self.load(abs_file)
+        # Skip to next file if not joinable
+        if not self.check_joinable(post):
+            logger.debug(f'ZK join: Skip file "{rel_dir}/{os.path.basename(abs_file)}" since not joinable.')
+            return
+        # join md note
+        post.content = self.standardize(post.content)
+        ...
 
     def check_joinable(self, post: frontmatter.Post) -> bool:
         """
-        check file joinable by current Joint
+        is post joinable to current Joint
         :param post: frontmatter.Post
         :return: True if joinable, otherwise False
         """
@@ -195,7 +202,8 @@ class ClozeJoint(MdJoint):
             logger.debug(f'ZK join: "note-type" metadata missing in the frontmatter.')
             return False
 
-    def standardize(self, content: str) -> str:
+    @staticmethod
+    def standardize(content: str) -> str:
         """
         standardize markdown content to avoid some render error.
         :param content: MD content
@@ -204,9 +212,40 @@ class ClozeJoint(MdJoint):
         # replace ':emoji-alia:' to emoji
         content = emojis.encode(content)
         return content
+
+    def make_soup(self, content: str) -> BeautifulSoup:
+        ...
+
+    def get_heading_scope(self, soup: BeautifulSoup) -> BeautifulSoup:
+        ...
+
+    """
+    ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+    note-level
+    """
+
+    def join_note(self):
+        ...
+
+    def parse_media(self, soup: BeautifulSoup) -> None:
+        ...
+
+    def get_root_field(self, soup: BeautifulSoup) -> str:
+        ...
+
+    def get_extra_field(self, soup: BeautifulSoup) -> str:
+        ...
+
+    def get_text_field(self, soup: BeautifulSoup) -> str:
+        ...
+
+    def parse_cloze_deletion(self, soup: BeautifulSoup) -> BeautifulSoup:
         ...
 
 
+"""
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+"""
 # Add joints in this function, manually
 JOINTS: dict[str: Joint] = {
     ClozeJoint.model_name: ClozeJoint(),
@@ -222,7 +261,7 @@ def join(path: str = None, test_mode: bool = False):
         return
     new_notes_count: int = 0
     for joint in JOINTS.values():
-        joint.join(zk, test_mode=test_mode)
+        joint.join_zk(zk, test_mode=test_mode)
         # calculate how many cards imported
         new_notes_count += joint.new_notes_count
     logger.info(f'ZK join: Done, {new_notes_count} notes imported.\n')
