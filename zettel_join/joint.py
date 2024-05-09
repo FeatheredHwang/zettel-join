@@ -10,8 +10,11 @@ import emojis
 import frontmatter
 import os
 import logging
+import markdown
 
 from bs4 import BeautifulSoup
+from markdown.extensions import tables
+from pymdownx import arithmatex, superfences
 
 from aqt import mw, gui_hooks
 from aqt.utils import showInfo
@@ -180,6 +183,8 @@ class ClozeJoint(MdJoint):
             return
         # join md note
         post.content = self.standardize(post.content)
+        soup: BeautifulSoup = self.make_soup(post.content)
+
         ...
 
     def check_joinable(self, post: frontmatter.Post) -> bool:
@@ -213,10 +218,31 @@ class ClozeJoint(MdJoint):
         content = emojis.encode(content)
         return content
 
-    def make_soup(self, content: str) -> BeautifulSoup:
-        ...
+    @staticmethod
+    def make_soup(content: str) -> BeautifulSoup:
+        """
+        Transfer md file to html, then using bs4 to parse
+        :param content: md file content
+        :return: beautifulsoup (parse tree) of the file
+        """
+        extensions: list[markdown.Extension] = []
+        # add table extension
+        table_ext = tables.TableExtension()
+        table_ext.setConfig('use_align_attribute', True)
+        extensions.append(table_ext)
+        # add math extension
+        math_ext = arithmatex.ArithmatexExtension()
+        math_ext.setConfig('preview', False)
+        math_ext.setConfig('generic', True)
+        extensions.append(math_ext)
+        # add fenced-code extension
+        fenced_code_ext = superfences.SuperFencesCodeExtension()
+        extensions.append(fenced_code_ext)
+        # parse markdown with extensions
+        html = markdown.markdown(content, extensions=extensions)
+        return BeautifulSoup(html, 'html.parser')
 
-    def get_heading_scope(self, soup: BeautifulSoup) -> BeautifulSoup:
+    def get_note_scope(self, soup: BeautifulSoup) -> BeautifulSoup:
         ...
 
     """
@@ -225,6 +251,8 @@ class ClozeJoint(MdJoint):
     """
 
     def join_note(self):
+        # deck_id: DeckId = mw.col.decks.id(deck_name)
+
         ...
 
     def parse_media(self, soup: BeautifulSoup) -> None:
