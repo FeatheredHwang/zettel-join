@@ -32,6 +32,10 @@ from .zk import ZettelKasten
 logger = logging.getLogger(__name__)
 
 
+class FileId(int):
+    ...
+
+
 class Joint:
     def __init__(self):
         ...
@@ -71,6 +75,14 @@ class MdJoint(Joint):
         post = frontmatter.loads(self.read(file))
         logger.debug(f'File load: Done, frontmatter metadata of above file is {post.metadata}')
         return post
+
+    @staticmethod
+    def write():
+        ...
+
+    @staticmethod
+    def dump(file: str, post: frontmatter.Post):
+        frontmatter.dump(post, file)
 
 
 class ClozeJoint(MdJoint):
@@ -156,16 +168,16 @@ class ClozeJoint(MdJoint):
             dirs[:] = [d for d in dirs if not d.startswith('.')]
             files = [f for f in files if f.endswith(self.FILE_TYPE) and not f.startswith('.')]
             if not files:
-                logger.debug(f'ZK-join: Skip folder {rel_dir} since no MD files included.')
+                logger.debug(f'ZK-join: Skip dir {rel_dir} since no MD files included.')
                 continue
-            logger.debug(f'ZK-join: Current dir "{rel_dir}".')
+            logger.debug(f'ZK-join: Handling with dir "{rel_dir}".')
             # Generate deck_name and get deck_id
             deck_name: str = rel_dir.replace(os.sep, '::') if rel_dir != '.' else 'Default'
             deck_id: DeckId = mw.col.decks.id(deck_name)  # find deck or create if not exist
             # Calculate depth, warning if depth > 3
             depth = 0 if rel_dir == '.' else len(rel_dir.split(os.sep))  # os.sep is '\'
             if depth > 3:
-                logger.warning(f'ZK-join: bad practise, current working dir is "{depth}-level-deep" in zk.')
+                logger.warning(f'ZK-join: bad practise, current dir is "{depth}-level-deep" in zk, more than 3.')
             # Traverse the files
             for file in files:
                 abs_file = os.path.join(root, file)  # get the abs path
@@ -200,6 +212,11 @@ class ClozeJoint(MdJoint):
             if self.join_note(heading, deck_id):
                 new_notes_count += 1
         logger.info(f'File-join: Done, with {new_notes_count} notes joined.')
+        # Finally, comment the source file if new-notes imported
+        file_id = ...
+        if new_notes_count > 0:
+            self.comment_fileid(abs_file, file_id)
+            self.dump(abs_file, post)
         return new_notes_count
 
     def check_joinable(self, post: frontmatter.Post) -> bool:
@@ -258,6 +275,12 @@ class ClozeJoint(MdJoint):
         # parse markdown with extensions
         html = markdown.markdown(content, extensions=extensions)
         return BeautifulSoup(html, 'html.parser')
+
+    def comment_fileid(self, abs_file: str, file_id: FileId) -> None:
+        ...
+
+    def get_commented_fileid(self, abs_file: str) -> None:
+        ...
 
     """ ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
     note-level
