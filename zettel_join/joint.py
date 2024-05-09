@@ -12,6 +12,7 @@ import frontmatter
 import logging
 import markdown
 import os
+import re
 import shutil
 
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment, ResultSet
@@ -37,10 +38,12 @@ class FileId(int):
 
 
 class Joint:
+    model_name: str
+
     def __init__(self):
         ...
 
-    def join_zk(self, zk: ZettelKasten = None, test_mode: bool = False):
+    def join_zk(self, zk: ZettelKasten = None, test_mode: bool = False) -> int:
         ...
 
 
@@ -99,7 +102,7 @@ class ClozeJoint(MdJoint):
         self.new_notes_count = 0
         gui_hooks.profile_did_open.append(self.check_model)
 
-    def check_model(self, model_name: str = None) -> bool:
+    def check_model(self, model_name: str = None, test_mode: bool = False) -> bool:
         """
         verify if model exists, create model if not
         :return: False while error happens, otherwise True
@@ -108,13 +111,17 @@ class ClozeJoint(MdJoint):
         if model_name is None:
             logger.error('Create model: cancelled, model name is None.')
             return False
+        if test_mode:
+            self.model_name += ' (test)'
+        # Create model if not exists
         m = mw.col.models.byName(self.model_name)
         if m:
             logger.info(f'Create model: model already exists, model name "{self.model_name}"')
             self.model = m
             return True
         else:
-            self.create_model(model_name=model_name)
+            self.create_model(model_name=self.model_name)
+            logger.info(f'Create model: Done, model name "{self.model_name}"')
             return True
 
     def create_model(self, model_name: str = None):
@@ -135,7 +142,7 @@ class ClozeJoint(MdJoint):
             fld['size'] = 15
             fld['plainText'] = True
             mm.addField(m, fld)
-        mm.set_sort_index(m, fields.index('header'))
+        mm.set_sort_index(m, fields.index('root'))
         # Add card template and css using relative path
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
         t: Template = mm.newTemplate('Cloze')
@@ -155,8 +162,7 @@ class ClozeJoint(MdJoint):
     def join_zk(self, zk: ZettelKasten = None, test_mode: bool = False) -> int:
         self.zk = zk
         if test_mode:
-            self.model_name += ' (test)'
-            self.check_model(self.model_name)
+            self.check_model(test_mode=test_mode)
         logger.info(f'ZK-join: start using {self.__class__}, map to model "{self.model_name}"')
         # Traverse the ZK
         new_notes_count: int = 0
@@ -277,9 +283,32 @@ class ClozeJoint(MdJoint):
         return BeautifulSoup(html, 'html.parser')
 
     def comment_fileid(self, abs_file: str, file_id: FileId) -> None:
+        """
+        set file-id suffix in filename, remove suffix if file-id is 0.
+        """
         ...
 
     def get_commented_fileid(self, abs_file: str) -> None:
+        # Return suffix in filename that shows which joint the file uses
+        ...
+
+    @staticmethod
+    def set_suffix(file: str) -> str:
+        # new_file = re.sub(r'\[\w+]', '', abs_file)
+        # os.rename(abs_file, new_file)
+        # #
+        # name, ext = os.path.splitext(re.sub(r'\[\w+]', '', file))
+        # new_file = f'{name}[{suffix}]{ext}'
+        # os.rename(file, new_file)
+        ...
+
+    @staticmethod
+    def get_suffix(file: str) -> str:
+        # m = re.fullmatch(
+        #     r'.+\[(?P<suffix>\w+)]\.\w+',
+        #     file
+        # )
+        # return m.group('suffix') if m else ''
         ...
 
     """ ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
@@ -322,8 +351,8 @@ class ClozeJoint(MdJoint):
         # Create a note
         note = Note(mw.col, self.model)
         note['root'] = root_field
-        note['Text'] = str(text_field_scope)
-        note['Extra'] = str(extra_field_scope)
+        note['Text'] = str(text_field_scope).strip()
+        note['Extra'] = str(extra_field_scope).strip()
         if '⭐' in root_field:
             note.tags.append('marked')
         # add note to deck, and the note object will get assigned with id
@@ -363,6 +392,8 @@ class ClozeJoint(MdJoint):
         heading_strs: list[str] = []
         for n in range(index):
             heading_strs.append(note_heading.find_previous_sibling(self.HEADING_TAG_NAMES[n]).text)
+        # Finally add itself
+        heading_strs.append(note_heading.text)
         return '.'.join(heading_strs)
 
     @staticmethod
@@ -445,7 +476,9 @@ class ClozeJoint(MdJoint):
         :param cloze_no: cloze number which is unique in the note
         :return: True if cloze deletion was successful, False otherwise
         """
-        if cloze_tag.string.strip() == '':  # skip empty tag
+        if not cloze_tag.string:  # skip empty tag
+            return False
+        elif cloze_tag.string.strip() == '':  # skip empty tag
             return False
         if len(cloze_tag.contents) > 1:  # skip if including child tag(s)
             return False
@@ -462,9 +495,9 @@ module-level functions
 """
 
 # Add joints in this function, manually
-JOINTS: dict[str: Joint] = {
-    ClozeJoint.model_name: ClozeJoint(),
-}
+JOINTS: list[Joint] = [
+    ClozeJoint(),
+]
 
 
 def join(path: str, test_mode: bool = False):
@@ -476,10 +509,9 @@ def join(path: str, test_mode: bool = False):
     zk: ZettelKasten = ZettelKasten(path)
     logger.info(f'ZK-join: Handling with ZK "{zk.path}".\n')
     new_notes_count: int = 0
-    for joint in JOINTS.values():
-        joint.join_zk(zk, test_mode=test_mode)
+    for joint in JOINTS:
         # calculate how many cards imported
-        new_notes_count += joint.new_notes_count
+        new_notes_count += joint.join_zk(zk, test_mode=test_mode)
     logger.info(f'ZK-join: Done, {new_notes_count} notes imported.\n\n')
     showInfo(f'ZK-join finished, with {new_notes_count} notes imported.')
     # refresh the deck browser

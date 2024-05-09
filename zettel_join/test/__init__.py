@@ -20,6 +20,7 @@ from .. import joint
 
 logger = logging.getLogger(__name__)
 
+
 env_ok = False
 dotenv_path: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
 if not dotenv.load_dotenv(dotenv_path):  # loading variables from .env file
@@ -59,8 +60,8 @@ def remove_test_models():
     remove all the models
     """
     mm = mw.col.models
-    mm.remove(mm.id_for_name('Cloze (traceable) (test)'))
-    mm.remove(mm.id_for_name('Oneside (test)'))
+    for j in joint.JOINTS:
+        mm.remove(mm.id_for_name(j.model_name + ' (test)'))
 
 
 def join_test_zk():
