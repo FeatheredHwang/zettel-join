@@ -61,7 +61,7 @@ class MdJoint(Joint):
 
     def load(self, file: str) -> frontmatter.Post:
         post = frontmatter.loads(self.read(file))
-        logger.debug(f'File load: frontmatter metadata of file "{file}" is {post.metadata}')
+        logger.debug(f'File load: Done, frontmatter metadata of above file is {post.metadata}')
         return post
 
 
@@ -86,7 +86,7 @@ class ClozeJoint(MdJoint):
             return False
         m = mw.col.models.byName(self.model_name)
         if m:
-            logger.info(f'Create model: model already exists, model name"{self.model_name}"')
+            logger.info(f'Create model: model already exists, model name "{self.model_name}"')
             self.model = m
             return True
         else:
@@ -130,48 +130,61 @@ class ClozeJoint(MdJoint):
         if test_mode:
             self.model_name += ' (test)'
             self.check_model(self.model_name)
-        # Traverse the directory
+        # Traverse the zk
         for root, dirs, files in os.walk(self.zk.path):
             # !Attention! dirs and files are just basename without path
-            # Filter out hidden directories and hidden files
-            dirs[:] = [d for d in dirs if not d.startswith('.')]
-            files = [f for f in files if not f.startswith('.')]
-            # Get the relative path of the current directory, and its depth from top dir
-            rel_path = os.path.relpath(root, self.zk.path)
-            joinables: list[str] = []
-            # Find out files which is able to join
-            for file in files:
-                file = os.path.join(root, file)  # get the complete path
-                logger.critical(self.check_joinable(file))
-                if self.check_joinable(file):
-                    joinables.append(file)
-            # Skip to next folder if no join-task exists
-            logger.critical(joinables)
-            if not joinables:
-                logger.debug(f'ZK join: Skip dir "{rel_path}" since no files to import here.')
+            # Filter
+            dirs[:] = self.filter_dirs(dirs)
+            files = self.filter_files(files)
+            # Get the relative path of the current directory
+            rel_dir = os.path.relpath(root, self.zk.path)
+            if not files:
+                logger.debug(f'ZK join: Skip folder {rel_dir} since no MD files included.')
                 continue
-            # join file to deck
-            deck_name: str = rel_path.replace(os.sep, '::') if rel_path != '.' else 'Default'
-            logger.debug(f'ZK join: Current dir "{rel_path}", to the deck "{deck_name}"')
-            depth = 0 if rel_path == '.' else len(rel_path.split(os.sep))  # os.sep is '\'
-            if depth > 3:
-                logger.warning(f'ZK join: bad practise, current working dir is "{depth}-level-deep" in zk.')
-            for file in joinables:
-                logger.debug(f'ZK join: ')
+            # Traverse the files
+            joinable_count: int = 0
+            deck_name: str = 'Default'
+            for file in files:
+                abs_file = os.path.join(root, file)  # get the abs path
+                post = self.load(file)
+                # Skip to next file if not joinable
+                if not self.check_joinable(post):
+                    logger.debug(f'ZK join: Skip file "{rel_dir}/{file}" since not joinable.')
+                    continue
+                joinable_count += 1
+                if joinable_count == 1:
+                    # generate deck_name
+                    deck_name = rel_dir.replace(os.sep, '::') if rel_dir != '.' else 'Default'
+                    logger.debug(f'ZK join: Current dir "{rel_dir}", to the deck "{deck_name}"')
+                    # Calculate depth, warning if depth > 3
+                    depth = 0 if rel_dir == '.' else len(rel_dir.split(os.sep))  # os.sep is '\'
+                    if depth > 3:
+                        logger.warning(f'ZK join: bad practise, current working dir is "{depth}-level-deep" in zk.')
+                # join md note
+                post.content = self.standardize(post.content)
                 ...
 
-    def check_joinable(self, file: str) -> bool:
+    @staticmethod
+    def filter_dirs(dirs: list[str]) -> list[str]:
+        # Filter out hidden directories
+        return [d for d in dirs if not d.startswith('.')]
+
+    @staticmethod
+    def filter_files(files: list[str]) -> list[str]:
+        # Filter out hidden and non-MD files
+        files = [f for f in files if f.endswith('.md') and not f.startswith('.')]
+        return files
+
+    def check_joinable(self, post: frontmatter.Post) -> bool:
         """
         check file joinable by current Joint
-        :param file: file path
+        :param post: frontmatter.Post
         :return: True if joinable, otherwise False
         """
-        post: frontmatter.Post = self.load(file)
         # try to fetch 'note-type'
-        note_type: str
         try:
-            note_type = str(post['note-type'])
-            logger.debug(f'ZK join: in the frontmatter of file "{file}", "note-type" is {note_type}.')
+            note_type: str = str(post['note-type'])
+            logger.debug(f'ZK join: "note-type" is "{note_type}" in the frontmatter.')
             # judge if match current joint
             if note_type == self.model_name or \
                     note_type in self.model_name:
@@ -179,8 +192,16 @@ class ClozeJoint(MdJoint):
             else:
                 return False
         except KeyError:  # note-type key not exists
-            logger.debug(f'ZK join: "note-type" metadata missing in the frontmatter of file "{file}".')
+            logger.debug(f'ZK join: "note-type" metadata missing in the frontmatter.')
             return False
+
+    def standardize(self, content: str = None) -> str:
+        """
+        standardize markdown content to avoid some render error.
+        :param content: MD content
+        :return: standardized MD content
+        """
+        ...
 
 
 # Add joints in this function, manually

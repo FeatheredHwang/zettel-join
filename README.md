@@ -48,7 +48,9 @@ Slipbox-root-folder
 1. Most importantly, include a '.root' folder in your Kästen's root, this will indicate this folder is a Knowledge Base.
 2. Hidden files and folders starts with `.` will be ignored.
 3. Folder name will be joined together as deck's name such as: `ProjectA::BookX`
-4. Add frontmatter like `note-type: cloze` at the start of file content, which indicates what Note-type it uses. For more information, see next section.
+4. Add frontmatter like `note-type: cloze` at the start of file content, which indicates what Note-type it uses. For more information, see  section.
+
+> Actually you can create as many level of folder as you like. For note-taking best practice, I encourage you to control the depth of folder no more than 3.
 
 #### NoteType
 
