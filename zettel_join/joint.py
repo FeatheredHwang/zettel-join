@@ -277,11 +277,16 @@ class ClozeJoint(MdJoint):
         note_scope: BeautifulSoup = self.get_note_scope(note_heading)
         extra_field_scope = self.parse_extra_field_scope(note_scope)
         text_field_scope = self.parse_text_field_scope(note_scope)
-        cloze_count = self.do_cloze_deletion(text_field_scope)
+        # cloze deletion
+        cloze_count: int = 1
+        for cloze_tag in self.do_cloze_selection(cloze_scope=text_field_scope):
+            if self.do_cloze_deletion(cloze_tag, cloze_count):
+                cloze_count += 1
         if cloze_count:
             self.do_media_import(extra_field_scope)
             self.do_media_import(text_field_scope)
         ...
+        return cloze_count
 
     def get_note_scope(self, note_heading: Tag, recursive: bool = False) -> BeautifulSoup:
         """
@@ -363,15 +368,15 @@ class ClozeJoint(MdJoint):
     """
 
     @staticmethod
-    def do_cloze_deletion(cloze_scope: BeautifulSoup) -> int:
+    def do_cloze_selection(cloze_scope: BeautifulSoup) -> ResultSet:
         """
-        Do cloze-deletion on the text field
+        Select cloze on the text field
         :param cloze_scope: BeautifulSoup instance of the note scope
-        :return: How many cloze-deletions were made
+        :return: ResultSet of cloze tags
         """
-        # replace blockquote tags with the placeholder
+        # replace blockquote tags with placeholder, to avoid select cloze-deletion in blockquote tags
         blockquote_tags = cloze_scope.find_all('blockquote')
-        ph_count = 0
+        ph_count: int = 0
         for bq_tag in blockquote_tags:
             ph_count += 1
             ph_tag = cloze_scope.new_tag('blockquote')
@@ -380,28 +385,32 @@ class ClozeJoint(MdJoint):
         # find all cloze-deletion, avoid including child tag, skip if empty
         cloze_tags: ResultSet = cloze_scope.find_all(['strong', 'em', 'td', 'li'])
         cloze_tags += cloze_scope.select('div.arithmatex')
-        if not cloze_tags:
-            return 0
-        # cloze deletion
-        cloze_count = 0
-        for cloze_tag in cloze_tags:
-            if cloze_tag.string.strip() == '':  # skip empty tag
-                continue
-            if len(cloze_tag.contents) > 1:  # skip if including child tag(s)
-                continue
-            cloze_count += 1
-            cloze_tag.string = '{{c' + str(cloze_count) + ':: ' + cloze_tag.string + '}}'
-            # add math wrap manually
-            if cloze_tag.has_attr('class') and cloze_tag.attrs['class'] == 'arithmatex':
-                cloze_tag.string.insert_before('\\[')
-                cloze_tag.string.insert_after('\\]')
-        # replace blockquote placeholder with the original
+        # replace the blockquote placeholders with the original
         ph_count = 0
         for bq_tag in blockquote_tags:
             ph_count += 1
             ph_tag = cloze_scope.select_one(f'blockquote#ph-{ph_count}')
             ph_tag.replace_with(bq_tag)
-        return cloze_count
+        return cloze_tags
+
+    @staticmethod
+    def do_cloze_deletion(cloze_tag: Tag, cloze_no: int) -> bool:
+        """
+        Do cloze-deletion on the text field
+        :param cloze_tag: Tag waiting for cloze-deletion
+        :param cloze_no: cloze number which is unique in the note
+        :return: True if cloze deletion was successful, False otherwise
+        """
+        if cloze_tag.string.strip() == '':  # skip empty tag
+            return False
+        if len(cloze_tag.contents) > 1:  # skip if including child tag(s)
+            return False
+        cloze_tag.string = '{{c' + str(cloze_no) + ':: ' + cloze_tag.string + '}}'
+        # add math wrap manually
+        if cloze_tag.has_attr('class') and cloze_tag.attrs['class'] == 'arithmatex':
+            cloze_tag.contents[0].insert_before('\\[')
+            cloze_tag.contents[-1].insert_after('\\]')
+        return True
 
 
 """ ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
