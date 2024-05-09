@@ -9,19 +9,22 @@ A joint is an import handler, which corresponds to a special file-format as well
 import copy
 import emojis
 import frontmatter
-import os
 import logging
 import markdown
+import os
+import shutil
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup, Tag, NavigableString, Comment, ResultSet
 from markdown.extensions import tables
 from pymdownx import arithmatex, superfences
 
 from aqt import mw, gui_hooks
 from aqt.utils import showInfo
+from anki.decks import DeckId
 from anki.models import ModelManager, MODEL_CLOZE
 from anki.models import NotetypeDict as Model
 from anki.models import TemplateDict as Template
+from anki.notes import Note, NoteId
 
 from .zk import ZettelKasten
 
@@ -134,8 +137,7 @@ class ClozeJoint(MdJoint):
         self.model = mm.by_name(model_name)
         logger.info(f'Create model: Done, model name "{model_name}"')
 
-    """
-    ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+    """ ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
     ZK-level
     """
 
@@ -146,18 +148,19 @@ class ClozeJoint(MdJoint):
             self.check_model(self.model_name)
         # Traverse the zk
         for root, dirs, files in os.walk(self.zk.path):
+            # Get the relative path of the current directory
+            rel_dir = os.path.relpath(root, self.zk.path)
             # !Attention! dirs and files are just basename without path
             # Filter out hidden directories, hidden or non-MD files
             dirs[:] = [d for d in dirs if not d.startswith('.')]
             files = [f for f in files if f.endswith(self.FILE_TYPE) and not f.startswith('.')]
-            # Get the relative path of the current directory
-            rel_dir = os.path.relpath(root, self.zk.path)
             if not files:
                 logger.debug(f'ZK join: Skip folder {rel_dir} since no MD files included.')
                 continue
-            # Generate deck_name
+            logger.debug(f'ZK join: Current dir "{rel_dir}".')
+            # Generate deck_name and get deck_id
             deck_name: str = rel_dir.replace(os.sep, '::') if rel_dir != '.' else 'Default'
-            logger.debug(f'ZK join: Current dir "{rel_dir}", to the deck "{deck_name}"')
+            deck_id: DeckId = mw.col.decks.id(deck_name)  # find deck or create if not exist
             # Calculate depth, warning if depth > 3
             depth = 0 if rel_dir == '.' else len(rel_dir.split(os.sep))  # os.sep is '\'
             if depth > 3:
@@ -165,24 +168,24 @@ class ClozeJoint(MdJoint):
             # Traverse the files
             for file in files:
                 abs_file = os.path.join(root, file)  # get the abs path
-                self.join_file(abs_file, rel_dir)
+                self.join_file(abs_file, deck_id)
 
-    """
-    ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+    """ ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
     file-level
     """
 
     FILE_TYPE = '.md'
 
-    def join_file(self, abs_file: str, rel_dir: str = None):
+    def join_file(self, abs_file: str, deck_id: DeckId):
         """
+        Join MD file.
         :param abs_file: The absolute path of the file to join
-        :param rel_dir: The relative path of the directory to zk folder
+        :param deck_id: The ID of the deck where the MD file is joined to
         """
         post = self.load(abs_file)
         # Skip to next file if not joinable
         if not self.check_joinable(post):
-            logger.debug(f'ZK join: Skip file "{rel_dir}/{os.path.basename(abs_file)}" since not joinable.')
+            logger.debug(f'ZK join: Skip file "{os.path.basename(abs_file)}" since not joinable.')
             return
         # join md note
         post.content = self.standardize(post.content)
@@ -190,7 +193,7 @@ class ClozeJoint(MdJoint):
         new_notes_count: int = 0
         # Traverse headings
         for heading in soup.find_all(self.HEADING_TAGS):
-            note_soup: BeautifulSoup = self.get_heading_scope(heading)
+            self.join_note(heading, deck_id)
         ...
 
     def check_joinable(self, post: frontmatter.Post) -> bool:
@@ -252,50 +255,79 @@ class ClozeJoint(MdJoint):
     note-level
     """
 
-    HEADING_TAGS: list[str] = [f'h{n}' for n in range(1, 6)]
+    HEADING_TAGS: list[str] = [f'h{n}' for n in range(1, 7)]
 
-    def join_note(self, heading: Tag) -> None:
+    def join_note(self, note_heading: Tag, deck_id: DeckId) -> int:
         """
         Join MD file sections to Anki notes
-        :param heading: heading tag from the parse tree
+        :param note_heading: bs4-tag of heading from the parse tree, which corresponds to an Anki-note
+        :param deck_id: The ID of the deck where the MD file is joined to
+        :return: How many notes joined
         """
-        # deck_id: DeckId = mw.col.decks.id(deck_name)
-        note_scope: BeautifulSoup = self.get_note_scope(heading)
-
+        note_scope: BeautifulSoup = self.get_note_scope(note_heading)
+        # get heading root (heading path)
+        root_field = self.get_root_field(note_heading)
+        logger.debug(f'Importing MD - get heading: "{root_field}"')
+        # Check if the note has been imported (commented with note_id)
+        noteid = self.get_commented_noteid(note_heading)
+        if noteid:
+            logger.debug(f'Note-join: note already imported: "{root_field}"')
+            return 0
         ...
 
-    def get_note_scope(self, heading: Tag, recursive: bool = False) -> BeautifulSoup:
+    def get_note_scope(self, note_heading: Tag, recursive: bool = False) -> BeautifulSoup:
         """
         get the note scope of soup from the parse tree (a header corresponds to a note)
-        :param heading: heading tag from the parse tree
+        :param note_heading: heading bs4-tag from the parse tree, which corresponds to Anki-note
         :param recursive: if True, include subheadings with their content
-        :return: BeautifulSoup of the note scope
+        :return: BeautifulSoup instance of the note scope
         """
         # check tag name
-        if heading.name not in self.HEADING_TAGS:
-            raise ValueError(f'heading tag supposed, but <{heading.name}> tag get')
+        if note_heading.name not in self.HEADING_TAGS:
+            raise ValueError(f'heading tag supposed, but <{note_heading.name}> tag get')
         # setup stop condition (while encounter the specific tag, stop parsing)
         if recursive:
-            stop = self.HEADING_TAGS[:self.HEADING_TAGS.index(heading.name) + 1]
+            stop = self.HEADING_TAGS[:self.HEADING_TAGS.index(note_heading.name) + 1]
         else:
             stop = self.HEADING_TAGS
         stop.append('hr')  # <hr> tag is also one of stop tag
         # generate heading/note scope
         note_scope: BeautifulSoup = BeautifulSoup('', 'html.parser')
-        sibling = heading.find_next_sibling()  # !Attention!: .next_sibling might return NavigableString
+        sibling = note_heading
         while sibling and sibling.name not in stop:
+            sibling = sibling.next_sibling  # !Attention! .next_sibling might return NavigableString
+            if sibling.name in stop:
+                break
             note_scope.append(copy.copy(sibling))
-            sibling = sibling.find_next_sibling()
         return note_scope
 
     def parse_media(self, soup: BeautifulSoup) -> None:
+        """
+        Import media file to Anki collection (media folder).
+        :param soup: BeautifulSoup object of note scope
+        :return:
+        """
         ...
 
-    def get_root_field(self, soup: BeautifulSoup) -> str:
-        ...
+    def get_root_field(self, note_heading: Tag) -> str:
+        index = self.HEADING_TAGS.index(note_heading.name)
+        heading_strs: list[str] = []
+        for n in range(index):
+            heading_strs.append(note_heading.find_previous_sibling(self.HEADING_TAGS[n]).text)
+        return '.'.join(heading_strs)
 
-    def get_extra_field(self, soup: BeautifulSoup) -> str:
-        ...
+    @staticmethod
+    def get_extra_field(note_scope: BeautifulSoup) -> str:
+        """
+        extract the blockquote tags to extra field
+        :param note_scope: BeautifulSoup instance of the note scope
+        :return: extra field string
+        """
+        extra_field = ''
+        # Find all the blockquote tags, join them as the extra field
+        for tag in note_scope.find_all('blockquote', recursive=False):
+            extra_field += str(tag.extract())
+        return extra_field
 
     def get_text_field(self, soup: BeautifulSoup) -> str:
         ...
@@ -303,10 +335,17 @@ class ClozeJoint(MdJoint):
     def parse_cloze_deletion(self, soup: BeautifulSoup) -> BeautifulSoup:
         ...
 
+    def comment_noteid(self) -> str:
+        ...
 
+    def get_commented_noteid(self, note_heading: Tag) -> NoteId:
+        ...
+
+
+""" ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
+module-level functions
 """
----------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
-"""
+
 # Add joints in this function, manually
 JOINTS: dict[str: Joint] = {
     ClozeJoint.model_name: ClozeJoint(),
