@@ -6,7 +6,7 @@
 A joint is an import handler, which corresponds to a special file-format as well as a model.
 """
 
-
+import emojis
 import frontmatter
 import os
 import logging
@@ -195,12 +195,15 @@ class ClozeJoint(MdJoint):
             logger.debug(f'ZK join: "note-type" metadata missing in the frontmatter.')
             return False
 
-    def standardize(self, content: str = None) -> str:
+    def standardize(self, content: str) -> str:
         """
         standardize markdown content to avoid some render error.
         :param content: MD content
         :return: standardized MD content
         """
+        # replace ':emoji-alia:' to emoji
+        content = emojis.encode(content)
+        return content
         ...
 
 
