@@ -25,9 +25,10 @@ def transfer_md_to_html():
     """
     # using os module to get environment variables
     test_kasten_path = os.getenv('TEST_KASTEN_PATH')
-    md_ex_path = os.getenv('MD_EX_PATH')
+    project_path = os.getenv('PROJECT_PATH')
 
     # copy example directory
+    md_ex_path = os.path.join(project_path, 'zettel_join/doc/ex')
     ex_dst_path = pathlib.Path(os.path.join(test_kasten_path, 'About this addon/MD examples'))
     ex_dst_path.mkdir(parents=True, exist_ok=True)  # create dir if not exist
     shutil.copytree(md_ex_path, ex_dst_path, dirs_exist_ok=True)  # copy MD examples, overwrite if file exists
@@ -42,6 +43,7 @@ def transfer_md_to_html():
     math_ext = ArithmatexExtension()
     math_ext.setConfig('preview', False)
     math_ext.setConfig('generic', True)
+    math_ext.setConfig('tex_block_wrap', ['', ''])  # no wrap while parse, add manually after cloze deletion
     extensions.append(math_ext)
     # add fenced_code extension
     fenced_code_ext = SuperFencesCodeExtension()
@@ -59,8 +61,7 @@ def transfer_md_to_html():
             print(file)
             with open(os.path.join(root, file), mode='r', encoding='utf-8') as md_file:
                 # Read the entire content of the file
-                # file_content = md_file.read()
-                post = frontmatter.load(md_file)
+                post = frontmatter.loads(md_file.read())
                 print(post.metadata)
                 print(f"File <{os.path.join(root, file)}> read successfully")
             html_content = markdown.markdown(post.content, extensions=extensions)

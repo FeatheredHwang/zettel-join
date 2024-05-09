@@ -242,6 +242,8 @@ class ClozeJoint(MdJoint):
         math_ext = arithmatex.ArithmatexExtension()
         math_ext.setConfig('preview', False)
         math_ext.setConfig('generic', True)
+        # not wrap while parse md, add manually after cloze deletion
+        math_ext.setConfig('tex_block_wrap', ['', ''])
         extensions.append(math_ext)
         # add fenced-code extension
         fenced_code_ext = superfences.SuperFencesCodeExtension()
@@ -261,7 +263,7 @@ class ClozeJoint(MdJoint):
         Join MD file sections to Anki notes
         :param note_heading: bs4-tag of heading from the parse tree, which corresponds to an Anki-note
         :param deck_id: The ID of the deck where the MD file is joined to
-        :return: How many notes joined
+        :return: How many cloze-deletions made
         """
         # get heading root (heading path)
         root_field = self.parse_root_field(note_heading)
@@ -377,21 +379,28 @@ class ClozeJoint(MdJoint):
             bq_tag.replace_with(ph_tag)
         # find all cloze-deletion, avoid including child tag, skip if empty
         cloze_tags: ResultSet = cloze_scope.find_all(['strong', 'em', 'td', 'li'])
-        cloze_math_tags: ResultSet = cloze_scope.select('div.arithmatex')
-        if not cloze_tags and not cloze_math_tags:
+        cloze_tags += cloze_scope.select('div.arithmatex')
+        if not cloze_tags:
             return 0
         # cloze deletion
         cloze_count = 0
         for cloze_tag in cloze_tags:
-            if cloze_tag.string == '':  # skip empty tag
+            if cloze_tag.string.strip() == '':  # skip empty tag
                 continue
-            if len(cloze_tag.contents) > 1:  # skip if including child tag
+            if len(cloze_tag.contents) > 1:  # skip if including child tag(s)
                 continue
             cloze_count += 1
             cloze_tag.string = '{{c' + str(cloze_count) + ':: ' + cloze_tag.string + '}}'
-        for cloze_math_tag in cloze_math_tags:
-            cloze_count += 1
-            cloze_math_tag.string = '\\[\n{{c' + str(cloze_count) + ':: ' + cloze_math_tag.string[3:-3] + ' }}\n\\]'
+            # add math wrap manually
+            if cloze_tag.has_attr('class') and cloze_tag.attrs['class'] == 'arithmatex':
+                cloze_tag.string.insert_before('\\[')
+                cloze_tag.string.insert_after('\\]')
+        # replace blockquote placeholder with the original
+        ph_count = 0
+        for bq_tag in blockquote_tags:
+            ph_count += 1
+            ph_tag = cloze_scope.select_one(f'blockquote#ph-{ph_count}')
+            ph_tag.replace_with(bq_tag)
         return cloze_count
 
 
