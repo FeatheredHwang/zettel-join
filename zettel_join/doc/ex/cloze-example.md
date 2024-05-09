@@ -17,12 +17,13 @@ After join/importation, a **comment** with Note Id will be inserted after the he
 
 ## Field Map
 
-- 1-3 headings will be joined together as 'root' field. 
+- Headings will be joined together, from h1 to h\[1-6\], as 'root' field. 
 - Content under the heading (except blockquotes) will map to 'Text' field, where cloze-deletion happens.
 - Blockquotes under the heading will map to 'Extra' field.
-- H1 headings will map to 'Chapter' field, corresponding to chapters in the book.
-- H2 headings will map to 'Section' field,  corresponding to sections in the book.
-- H3 headings will map to 'Subsection' field,  corresponding to subsections in the book.**
+
+> You can map heading to book's section. For example, h1 map  to chapter, h2 map to section.
+>
+> For best practice, limit heading's level no more than three.
 
 ## Cloze-deletion rules
 
