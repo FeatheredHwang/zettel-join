@@ -140,12 +140,14 @@ class ClozeJoint(MdJoint):
     ZK-level
     """
 
-    def join_zk(self, zk: ZettelKasten = None, test_mode: bool = False):
+    def join_zk(self, zk: ZettelKasten = None, test_mode: bool = False) -> int:
         self.zk = zk
         if test_mode:
             self.model_name += ' (test)'
             self.check_model(self.model_name)
-        # Traverse the zk
+        logger.info(f'ZK-join: start using {self.__class__}, map to model "{self.model_name}"')
+        # Traverse the ZK
+        new_notes_count: int = 0
         for root, dirs, files in os.walk(self.zk.path):
             # Get the relative path of the current directory
             rel_dir = os.path.relpath(root, self.zk.path)
@@ -154,20 +156,22 @@ class ClozeJoint(MdJoint):
             dirs[:] = [d for d in dirs if not d.startswith('.')]
             files = [f for f in files if f.endswith(self.FILE_TYPE) and not f.startswith('.')]
             if not files:
-                logger.debug(f'ZK join: Skip folder {rel_dir} since no MD files included.')
+                logger.debug(f'ZK-join: Skip folder {rel_dir} since no MD files included.')
                 continue
-            logger.debug(f'ZK join: Current dir "{rel_dir}".')
+            logger.debug(f'ZK-join: Current dir "{rel_dir}".')
             # Generate deck_name and get deck_id
             deck_name: str = rel_dir.replace(os.sep, '::') if rel_dir != '.' else 'Default'
             deck_id: DeckId = mw.col.decks.id(deck_name)  # find deck or create if not exist
             # Calculate depth, warning if depth > 3
             depth = 0 if rel_dir == '.' else len(rel_dir.split(os.sep))  # os.sep is '\'
             if depth > 3:
-                logger.warning(f'ZK join: bad practise, current working dir is "{depth}-level-deep" in zk.')
+                logger.warning(f'ZK-join: bad practise, current working dir is "{depth}-level-deep" in zk.')
             # Traverse the files
             for file in files:
                 abs_file = os.path.join(root, file)  # get the abs path
-                self.join_file(abs_file, deck_id)
+                new_notes_count += self.join_file(abs_file, deck_id)
+        logger.info(f'ZK-join: finish using {self.__class__}, with {new_notes_count} joined.\n')
+        return new_notes_count
 
     """ ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
     file-level
@@ -175,25 +179,28 @@ class ClozeJoint(MdJoint):
 
     FILE_TYPE = '.md'
 
-    def join_file(self, abs_file: str, deck_id: DeckId):
+    def join_file(self, abs_file: str, deck_id: DeckId) -> int:
         """
         Join MD file.
         :param abs_file: The absolute path of the file to join
         :param deck_id: The ID of the deck where the MD file is joined to
         """
+        logger.debug(f'File-join: Handling with "{os.path.basename(abs_file)}"')
         post = self.load(abs_file)
         # Skip to next file if not joinable
         if not self.check_joinable(post):
-            logger.debug(f'ZK join: Skip file "{os.path.basename(abs_file)}" since not joinable.')
-            return
-        # join md note
+            logger.info(f'File-join: Skip file since it is not joinable.')
+            return 0
+        # join MD note
         post.content = self.standardize(post.content)
         soup: BeautifulSoup = self.make_soup(post.content)
         new_notes_count: int = 0
         # Traverse headings
         for heading in soup.find_all(self.HEADING_TAG_NAMES):
-            self.join_note(heading, deck_id)
-        ...
+            if self.join_note(heading, deck_id):
+                new_notes_count += 1
+        logger.info(f'File-join: Done, with {new_notes_count} notes joined.')
+        return new_notes_count
 
     def check_joinable(self, post: frontmatter.Post) -> bool:
         """
@@ -204,7 +211,7 @@ class ClozeJoint(MdJoint):
         # try to fetch 'note-type'
         try:
             note_type: str = str(post['note-type'])
-            logger.debug(f'ZK join: "note-type" is "{note_type}" in the frontmatter.')
+            logger.debug(f'File-join: "note-type" is "{note_type}" in the frontmatter.')
             # judge if match current joint
             if note_type == self.model_name or \
                     note_type in self.model_name:
@@ -212,7 +219,7 @@ class ClozeJoint(MdJoint):
             else:
                 return False
         except KeyError:  # note-type key not exists
-            logger.debug(f'ZK join: "note-type" metadata missing in the frontmatter.')
+            logger.debug(f'File-join: "note-type" metadata missing in the frontmatter.')
             return False
 
     @staticmethod
@@ -267,7 +274,7 @@ class ClozeJoint(MdJoint):
         """
         # get heading root (heading path)
         root_field = self.parse_root_field(note_heading)
-        logger.debug(f'Importing MD - get heading: "{root_field}"')
+        logger.info(f'Note-join: Handling with note-heading: "{root_field}"')
         # Check if the note has been imported (commented with note_id)
         noteid = self.get_commented_noteid(note_heading)
         if noteid:
@@ -278,15 +285,29 @@ class ClozeJoint(MdJoint):
         extra_field_scope = self.parse_extra_field_scope(note_scope)
         text_field_scope = self.parse_text_field_scope(note_scope)
         # cloze deletion
-        cloze_count: int = 1
+        new_cloze_count: int = 0
         for cloze_tag in self.do_cloze_selection(cloze_scope=text_field_scope):
-            if self.do_cloze_deletion(cloze_tag, cloze_count):
-                cloze_count += 1
-        if cloze_count:
-            self.do_media_import(extra_field_scope)
-            self.do_media_import(text_field_scope)
-        ...
-        return cloze_count
+            if self.do_cloze_deletion(cloze_tag, new_cloze_count + 1):
+                new_cloze_count += 1
+        # check if the note has cloze-deletion
+        if not new_cloze_count:
+            logger.debug(f'Note-join: no cloze-deletion found, skip.')
+            return 0
+        # Import media files
+        self.do_media_import(extra_field_scope)
+        self.do_media_import(text_field_scope)
+        # Create a note
+        note = Note(mw.col, self.model)
+        note['root'] = root_field
+        note['Text'] = str(text_field_scope)
+        note['Extra'] = str(extra_field_scope)
+        if '⭐' in root_field:
+            note.tags.append('marked')
+        # add note to deck, and the note object will get assigned with id
+        mw.col.add_note(note, deck_id)
+        self.comment_noteid(note_heading, note.id)
+        logger.info(f'Note-Join: Done, {new_cloze_count} cloze-deletions made, note.id: {note.id}')
+        return new_cloze_count
 
     def get_note_scope(self, note_heading: Tag, recursive: bool = False) -> BeautifulSoup:
         """
@@ -349,7 +370,7 @@ class ClozeJoint(MdJoint):
             logger.warning(f'Note-join: blockquote tags decomposed (without included in "Extra" field)')
         return note_scope
 
-    def comment_noteid(self) -> str:
+    def comment_noteid(self, note_heading: Tag, note_id: NoteId) -> str:
         ...
 
     def get_commented_noteid(self, note_heading: Tag) -> NoteId:
@@ -423,19 +444,20 @@ JOINTS: dict[str: Joint] = {
 }
 
 
-def join(path: str = None, test_mode: bool = False):
+def join(path: str, test_mode: bool = False):
     """
     Join your ZettelKästen to Anki
     """
-    zk: ZettelKasten = ZettelKasten(path)
     if not path:
         return
+    zk: ZettelKasten = ZettelKasten(path)
+    logger.info(f'ZK-join: Handling with ZK "{zk.path}".\n')
     new_notes_count: int = 0
     for joint in JOINTS.values():
         joint.join_zk(zk, test_mode=test_mode)
         # calculate how many cards imported
         new_notes_count += joint.new_notes_count
-    logger.info(f'ZK join: Done, {new_notes_count} notes imported.\n')
+    logger.info(f'ZK-join: Done, {new_notes_count} notes imported.\n\n')
     showInfo(f'ZK-join finished, with {new_notes_count} notes imported.')
     # refresh the deck browser
     mw.deckBrowser.refresh()
