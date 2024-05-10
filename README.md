@@ -35,8 +35,8 @@ Slipbox-root-folder
 ├─.root
 ├─ProjectA
 │  ├─BookX
-│  │      Chapter01[cloze].md
-│  │      Chapter02[cloze].md
+│  │      Chapter01.md
+│  │      Chapter02.md
 │  │      
 │  └─BookY
 │         (...)
@@ -48,25 +48,27 @@ Slipbox-root-folder
 1. Most importantly, include a '.root' folder in your Kästen's root, this will indicate this folder is a Knowledge Base.
 2. Hidden files and folders starts with `.` will be ignored.
 3. Folder name will be joined together as deck's name such as: `ProjectA::BookX`
-4. Add suffix like `[cloze]` to the end of filename, which indicates what Note-type it uses. For more information, see next section.
+4. Add frontmatter like `note-type: cloze` at the start of file content, which indicates what Note-type it uses. For more information, see  section.
 
-#### FileSuffix and NoteType
+> Actually you can create as many level of folder as you like. For note-taking best practice, I encourage you to control the depth of folder no more than 3.
 
-The "FileSuffix" indicates which NoteType(Model) should your MD note map to. The addon will create NoteTypes after the profile loaded. And it will recognize if the MD file has valid "FileSuffix" then import it.
+#### NoteType
+
+The "note-type" frontmatter indicates which NoteType(Model) should your MD note map to. The addon will create the NoteType automatically.  
 
 ```
-| [FileSuffix] | NoteType          |
-| ------------ | ----------------- |
-| [cloze]      | Cloze (traceable) |
+| short | NoteType |
+| ----- | -------- |
+| cloze | ZK Cloze |
 ```
 
 > Unfortunately, AnkiWeb doesn't support markdown table.
 
-Look at the [examples](https://github.com/FeatheredHwang/zettel-join/tree/main/zettel_join/ex) to learn about how to write a MD file.
+Look at the [examples](https://github.com/FeatheredHwang/zettel-join/tree/main/zettel_join/doc/ex) to learn about how to write a MD file.
 
 #### One-click import
 
-When the add-on is downloaded, a `KBjoin` option will be added to the `Tools` menu. Click it and choose your Knowledge Base Location, and that's all.
+When the add-on is downloaded, a `ZK Join` option will be added to the `Tools` menu. Click it and choose your Knowledge Base Location, and that's all.
 
 ### Changelog
 

@@ -1,3 +1,8 @@
+---
+note-type: cloze
+title: "Cloze Note Example"
+---
+
 # Cloze Note Example
 
 > [!TIP]
@@ -12,12 +17,13 @@ After join/importation, a **comment** with Note Id will be inserted after the he
 
 ## Field Map
 
-- 1-3 headings will be joined together as 'root' field. 
+- Headings will be joined together, from h1 to h\[1-6\], as 'root' field. 
 - Content under the heading (except blockquotes) will map to 'Text' field, where cloze-deletion happens.
 - Blockquotes under the heading will map to 'Extra' field.
-- H1 headings will map to 'Chapter' field, corresponding to chapters in the book.
-- H2 headings will map to 'Section' field,  corresponding to sections in the book.
-- H3 headings will map to 'Subsection' field,  corresponding to subsections in the book.**
+
+> You can map heading to book's section. For example, h1 map  to chapter, h2 map to section.
+>
+> For best practice, limit heading's level no more than three.
 
 ## Cloze-deletion rules
 
@@ -162,11 +168,27 @@ User defined tags will be supported in the future.
 
 Due to ["Use mnemonic techniques" rule](https://www.supermemo.com/en/blog/twenty-rules-of-formulating-knowledge)...
 
+
+
 ### No cloze-deletion found
 
 If there is no cloze-deletion found under the heading, it won't create any note for this note.
 
+
+
 ## Features
+
+### Frontmatter
+
+Frontmatter at the front of the file will be rendered separately from file content. For example:
+
+```
+---
+note-type: cloze
+---
+```
+
+For now, frontmatter is used to indicate which note-type should the MD file mirror to.
 
 ### Extra info
 
@@ -192,7 +214,7 @@ Allowing both Markdown syntax `![alt](src)` and HTML syntax `<img src="src" alt=
 
 For example:
 
-![forest](./.assets/forest.jpg)
+![forest](.assets/forest.jpg)
 
 > Photos by [Luca Bravo](https://unsplash.com/@lucabravo), free to use under the [Unsplash License](https://unsplash.com/license)
 

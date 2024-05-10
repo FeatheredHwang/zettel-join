@@ -13,9 +13,10 @@ logger = logging.getLogger(__name__)
 # Register modules/packages Here!
 MODULE_MAP: dict[str, str] = {
     # 'module_name': 'package_name',
+    'dotenv': 'python-dotenv',
     'emojis': 'emojis',
+    'frontmatter': 'python-frontmatter',
     'pymdownx': 'pymdown-extensions',
-    'dotenv': 'python-dotenv'
 }
 
 # pip options

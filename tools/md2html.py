@@ -1,39 +1,37 @@
 """
-Transfer markdown files to html for parse convenience,
+Transfer markdown files to html for test convenience,
 """
 import os
 import pathlib
 import shutil
 from dotenv import load_dotenv
 
+import frontmatter
 import markdown
 from markdown import Extension
 from markdown.extensions.tables import TableExtension
-# PyMdown Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
+# pymdownx Extensions Documentation https://facelessuser.github.io/pymdown-extensions/
 from pymdownx.emoji import EmojiExtension, to_alt
 from pymdownx.arithmatex import ArithmatexExtension
 from pymdownx.superfences import SuperFencesCodeExtension
 
 # load variables from .env file
-load_dotenv('../zettel_join/.env')
+load_dotenv('../zettel_join/test/.env')
 
 
-def transfer_mds_to_htmls():
-    """
-    Transfer markdown files to html for parse convenience
-    """
+def transfer_md_to_html():
     # using os module to get environment variables
     test_kasten_path = os.getenv('TEST_KASTEN_PATH')
-    md_ex_path = os.getenv('MD_EX_PATH')
+    project_path = os.getenv('PROJECT_PATH')
 
-    ex_dst_path = pathlib.Path(os.path.join(test_kasten_path, 'About this addon/MD examples/.backup'))
-    # if path not exist, create it
-    ex_dst_path.mkdir(parents=True, exist_ok=True)
-    # copy MD examples from the project dir, overwrite if file exists
-    shutil.copytree(md_ex_path, ex_dst_path, dirs_exist_ok=True)
+    # copy example directory
+    md_ex_path = os.path.join(project_path, 'zettel_join/doc/ex')
+    ex_dst_path = pathlib.Path(os.path.join(test_kasten_path, 'About this addon/MD examples'))
+    ex_dst_path.mkdir(parents=True, exist_ok=True)  # create dir if not exist
+    shutil.copytree(md_ex_path, ex_dst_path, dirs_exist_ok=True)  # copy MD examples, overwrite if file exists
 
+    # register examples
     extensions: list[Extension] = []
-
     # add emoji extension
     emoji_ext = EmojiExtension()
     emoji_ext.setConfig('emoji_generator', to_alt)
@@ -42,6 +40,7 @@ def transfer_mds_to_htmls():
     math_ext = ArithmatexExtension()
     math_ext.setConfig('preview', False)
     math_ext.setConfig('generic', True)
+    math_ext.setConfig('tex_block_wrap', ['', ''])  # no wrap while parse, add manually after cloze deletion
     extensions.append(math_ext)
     # add fenced_code extension
     fenced_code_ext = SuperFencesCodeExtension()
@@ -51,24 +50,23 @@ def transfer_mds_to_htmls():
     table_ext.setConfig('use_align_attribute', True)
     extensions.append(table_ext)
 
-    print(test_kasten_path)
-    for root, dirs, files in os.walk(test_kasten_path):
-        # print(root, dirs, files)
-        # dirs[:] = [d for d in dirs if not d.startswith('.')]
+    # render the files
+    print('Example MD files will be copied to: ' + ex_dst_path.__str__())
+    for root, dirs, files in os.walk(ex_dst_path):
         files = [f for f in files if not f.startswith('.') and f.endswith('.md')]
-        if root.endswith('.backup'):
-            for file in files:
-                print(file)
-                with open(os.path.join(root, file), mode='r', encoding='utf-8') as md_file:
-                    # Read the entire content of the file
-                    file_content = md_file.read()
-                    print(f"File <{os.path.join(root, file)}> read successfully")
-                html_content = markdown.markdown(file_content, extensions=extensions)
-                with open(os.path.join(root, file + '.html'), 'w', encoding='utf-8') as md_file:
-                    md_file.write(html_content)
-                    print(f"File <{os.path.join(root, file + '.html')}> write successfully")
+        for file in files:
+            print(file)
+            with open(os.path.join(root, file), mode='r', encoding='utf-8') as md_file:
+                # Read the entire content of the file
+                post = frontmatter.loads(md_file.read())
+                print(post.metadata)
+                print(f"File <{os.path.join(root, file)}> read successfully")
+            html_content = markdown.markdown(post.content, extensions=extensions)
+            with open(os.path.join(root, file + '.html'), 'w', encoding='utf-8') as md_file:
+                md_file.write(html_content)
+                print(f"File <{os.path.join(root, file + '.html')}> write successfully")
 
 
 if __name__ == '__main__':
     print(f'CWD: {os.getcwd()}')
-    transfer_mds_to_htmls()
+    transfer_md_to_html()

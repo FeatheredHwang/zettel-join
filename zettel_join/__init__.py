@@ -13,7 +13,7 @@ from anki.utils import version_with_build, int_version
 from . import log
 # download package to local library
 from . import modules
-from . import kb
+from . import joint
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +32,18 @@ else:
     logger.info("Importing test module: done.\n")
 
 
-# Add 'KB Join' menu item
+# Add 'ZK Join' menu item
 ##################################################
-def kb_join():
+def zk_join():
     """
     Join your knowledge base to Anki
     """
-    kb.KnowledgeBase().join()
+    joint.join()
 
 
 # create a new menu item
-action = QAction('KB Join', mw)
+action = QAction('ZK Join', mw)
 # set it to call testFunction when it's clicked
-qconnect(action.triggered, kb_join)
+qconnect(action.triggered, zk_join)
 # and add it to the tools menu
 mw.form.menuTools.addAction(action)
