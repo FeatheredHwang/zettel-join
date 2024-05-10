@@ -21,59 +21,39 @@ After join/importation, a **comment** with Note Id will be inserted after the he
 - Content under the heading (except blockquotes) will map to 'Text' field, where cloze-deletion happens.
 - Blockquotes under the heading will map to 'Extra' field.
 
-> You can map heading to book's section. For example, h1 map  to chapter, h2 map to section.
+> [!Note]
 >
-> For best practice, limit heading's level no more than three.
+> For best practice, map heading to book's section (h1 is chapter, h2 is section), limit heading's level no more than three.
 
 ## Cloze-deletion rules
 
 The most concerned question is, how the addon recognize cloze deletions. The addon will find cloze-deletions in the text field by the following rules.
 
 > These rules won't work in blockquote contents.
+> 
+
+> [!WARNING] 
+>
+> ZK-join *won't* accept nested cloze-deletion. For example, if you write MD like:
+> ```
+> 1. **strong** word inside a list item
+> ```
+> the `strong` word will be a cloze-deletion, while the list item not.
 
 ### Strong and emphasis(italic) words
 
 **Strong** words surrounded by `**`, **emphasis** words surrounded by `*`, both will join cloze deletion. 
 
-> After cloze-deletion, it would look like:
->
-> ```
-> **{{c1:: Strong }}** words, *{{c2:: emphasis }}* words
-> ```
-
 ### List items
 
-List items, no matter ordered or unordered, will join cloze deletion *if no strong/emphasis exists inside*. 
+List items, no matter ordered or unordered, if there is no special element exists inside, will join cloze deletion. 
 
 For example, there are four collection data types in the Python programming language:
 
 1. List
 2. Tuple
 3. Set
-   > Set items are unchangeable
 4. Dictionary
-
-> After cloze-deletion, it would look like:
->
-> ```
-> 1. {{c1:: List }}
-> 2. {{c2:: Tuple }}
-> 3. {{c3:: Set }}
->    > Set items are unchangeable
-> 4. {{c4:: Dictionary }}
-> ```
-
-> The above example works ill for memorize, due to ["Avoid sets" rule](https://www.supermemo.com/en/blog/twenty-rules-of-formulating-knowledge), you'd better to convert a set into a meaningful listing:
->
-> - **List** is a collection which is ordered and changeable. Allows duplicate members.
-> - **Tuple** is a collection which is ordered and **unchangeable**. Allows duplicate members.
-> - ...
->
-> or make a table for comparison convenience.
-
-> [!WARNING] 
-> 
-> If Strong words exists as well as list items, list items will be **ignored** for cloze-deletion.
 
 ### Table
 
@@ -107,38 +87,7 @@ $$
 \label{eq:sample}\tag{A}
 $$
 
-The best practice is put only one equation in each math-block. If you wanna put two or more equations into a single math-block,  you can use **'align'** environment and mark each equation with a label. *The addon will do cloze-deletion one-by-one.*
-
-$$
-\begin{align}
-  x &= x + 1 					\label{eq:1}\tag{1}	\\
-  \text{eggs} &= \text{bacon} 	\label{eq:2}\tag{2}
-\end{align}
-$$
-
-> With label assigned, the math block would be like this after cloze-deletion:
->
-> ```
-> $$
-> \begin{align}
-> 	{{c1:: x &= x + 1 }}                  \label{eq1}\tag{1}  \\
-> 	{{c2:: \text{eggs} &= \text{bacon} }} \label{eq2}\tag{2}
-> \end{align}
-> $$
-> ```
->
-> Without label assigned:
->
-> ```
-> $$
-> {{c1::
-> \begin{aligned}
-> S & = \frac{\pi r^2}{2} \\
-> & = \frac{1}{2} \pi r^2
-> \end{aligned}
-> }}
-> $$
-> ```
+The best practice is put only one equation in each math-block. 
 
 > [!WARNING]
 >
@@ -152,27 +101,9 @@ $$
 >
 > Math blocks won't be influenced by other cloze-deletion rules.
 
-
-
-### To be continued...
-
-
-
-#### User defined tags
-
-User defined tags will be supported in the future.
-
-**Bi-directional link** will be parsed as tags.
-
-#### Mind Map
-
-Due to ["Use mnemonic techniques" rule](https://www.supermemo.com/en/blog/twenty-rules-of-formulating-knowledge)...
-
-
-
 ### No cloze-deletion found
 
-If there is no cloze-deletion found under the heading, it won't create any note for this note.
+If there is no cloze-deletion found under the heading, it won't create any note for it.
 
 
 
