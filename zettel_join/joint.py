@@ -39,19 +39,46 @@ class FileId(int):
 
 class Joint:
     model_name: str
+    new_notes_count: int
 
     def __init__(self):
-        ...
+        self.new_notes_count = 0
+        gui_hooks.profile_did_open.append(self.check_model)
 
     def join_zk(self, zk: ZettelKasten = None, test_mode: bool = False) -> int:
         ...
 
+    def check_model(self, zk: ZettelKasten = None, test_mode: bool = False) -> int: ...
+
 
 class MdJoint(Joint):
+    model_name: str = 'ZK cloze'
 
     def __init__(self):
         super().__init__()
         ...
+
+    def create_model(self, model_name: str = None):
+        """
+        Build up the model and add it to Anki yet
+        """
+        mm: ModelManager = mw.col.models
+        m: Model = mm.new(self.model_name)
+        # Add fields
+        for fld_name in ['Front', 'Back']:
+            fld = mm.newField(fld_name)
+            fld['size'] = 15
+            fld['plainText'] = True
+            mm.addField(m, fld)
+        # Add card template
+        t: Template = mm.newTemplate('Card 1')
+        t['qfmt'] = "{{Front}}"
+        t['afmt'] = "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}"
+        mm.addTemplate(m, t)
+        # Add css
+        m['css'] = self.read('tpl/basic.css')
+        # Add the Model (NoteTypeDict) to Anki
+        mm.add_dict(notetype=m)
 
     def join_zk(self, zk: ZettelKasten = None, test_mode: bool = False):
         ...
@@ -99,8 +126,6 @@ class ClozeJoint(MdJoint):
 
     def __init__(self):
         super().__init__()
-        self.new_notes_count = 0
-        gui_hooks.profile_did_open.append(self.check_model)
 
     def check_model(self, model_name: str = None, test_mode: bool = False) -> bool:
         """
@@ -128,7 +153,7 @@ class ClozeJoint(MdJoint):
         model_name = self.model_name if not model_name else model_name
         logger.info(f'Create model: begin, model name "{model_name}"')
         # create model if not exist
-        mm: ModelManager = mw.col.models
+        mm: ModelManager = mw.col.models  # Using model manager is the only way to add new model
         m: Model = mm.new(model_name)
         fields: list[str] = [
             'root',  # the header path inside MD file
@@ -177,9 +202,10 @@ class ClozeJoint(MdJoint):
                 logger.debug(f'ZK-join: Skip dir {rel_dir} since no MD files included.')
                 continue
             logger.debug(f'ZK-join: Handling with dir "{rel_dir}".')
-            # Generate deck_name and get deck_id
+            # for media-import purpose. Image filepath is relative.
+            os.chdir(root)
+            # Generate deck_name
             deck_name: str = rel_dir.replace(os.sep, '::') if rel_dir != '.' else 'Default'
-            deck_id: DeckId = mw.col.decks.id(deck_name)  # find deck or create if not exist
             # Calculate depth, warning if depth > 3
             depth = 0 if rel_dir == '.' else len(rel_dir.split(os.sep))  # os.sep is '\'
             if depth > 3:
@@ -187,7 +213,7 @@ class ClozeJoint(MdJoint):
             # Traverse the files
             for file in files:
                 abs_file = os.path.join(root, file)  # get the abs path
-                new_notes_count += self.join_file(abs_file, deck_id)
+                new_notes_count += self.join_file(abs_file, deck_name)
         logger.info(f'ZK-join: finish using {self.__class__}, with {new_notes_count} joined.\n')
         return new_notes_count
 
@@ -210,7 +236,7 @@ class ClozeJoint(MdJoint):
             logger.info(f'File-join: Skip file since it is not joinable.')
             return 0
         # join MD note
-        post.content = self.standardize(post.content)
+        post.content = self.do_standardize(post.content)
         soup: BeautifulSoup = self.make_soup(post.content)
         new_notes_count: int = 0
         # Traverse headings
@@ -246,7 +272,7 @@ class ClozeJoint(MdJoint):
             return False
 
     @staticmethod
-    def standardize(content: str) -> str:
+    def do_standardize(content: str) -> str:
         """
         standardize markdown content to avoid some render error.
         :param content: MD content
@@ -317,11 +343,11 @@ class ClozeJoint(MdJoint):
 
     HEADING_TAG_NAMES: list[str] = [f'h{n}' for n in range(1, 7)]
 
-    def join_note(self, note_heading: Tag, deck_id: DeckId) -> int:
+    def join_note(self, note_heading: Tag, deck_name: str = None) -> int:
         """
         Join MD file sections to Anki notes
         :param note_heading: bs4-tag of heading from the parse tree, which corresponds to an Anki-note
-        :param deck_id: The ID of the deck where the MD file is joined to
+        :param deck_name: The name of the deck where the MD file is joined to
         :return: How many cloze-deletions made
         """
         # get heading root (heading path)
@@ -346,8 +372,8 @@ class ClozeJoint(MdJoint):
             logger.debug(f'Note-join: no cloze-deletion found, skip.')
             return 0
         # Import media files
-        self.do_media_import(extra_field_scope)
-        self.do_media_import(text_field_scope)
+        self.do_media_import(extra_field_scope, deck_name)
+        self.do_media_import(text_field_scope, deck_name)
         # Create a note
         note = Note(mw.col, self.model)
         note['root'] = root_field
@@ -356,6 +382,7 @@ class ClozeJoint(MdJoint):
         if '⭐' in root_field:
             note.tags.append('marked')
         # add note to deck, and the note object will get assigned with id
+        deck_id: DeckId = mw.col.decks.id(deck_name)  # find deck or create if not exist
         mw.col.add_note(note, deck_id)
         self.comment_noteid(note_heading, note.id)
         logger.info(f'Note-Join: Done, {new_cloze_count} cloze-deletions made, note.id: {note.id}')
@@ -424,18 +451,56 @@ class ClozeJoint(MdJoint):
             logger.warning(f'Note-join: blockquote tags decomposed (without included in "Extra" field)')
         return note_scope
 
+    def do_media_import(self, soup: BeautifulSoup, deck_name: str) -> int:
+        """
+        Import media file to Anki collection (media folder).
+        For now, only image media supported.
+        :param soup: the BeautifulSoup that contains img tags
+        :return: How many media files imported
+        """
+        # Since folders inside the media folder are not supported,
+        #  import img file directly to media folder with standard name,
+        #  and modify 'src' attribute of <img> tag to filename
+        img_tags = soup.find_all('img')
+        new_img_count: int = 0
+        for img_tag in img_tags:
+            src = img_tag.get('src', None)
+            # continue if src attribute missing
+            if not src:
+                logger.debug(f'Media-Import: add img failed, src attr missing, src="{src}"')
+                continue
+            if not os.path.isabs(src):
+                img = os.path.abspath(src)  # img path
+            else:
+                img = src
+            # continue if file not exist
+            if not os.path.exists(img):
+                logger.debug(f'Media-Import: add img failed, image file not exist, img path "{img}"')
+                continue
+            img_name = os.path.basename(img)
+            # create a copy with standardized name
+            std_name = '.'.join(self.aimed_deck.split(sep='::') + [img_name])
+            std_img = os.path.join(os.path.dirname(img), std_name)
+            shutil.copyfile(img, std_img)
+            # modify 'src' attribute of <img> tag
+            img_tag['src'] = std_name
+            # Anki will add basename of path to the media folder, renaming if not unique
+            #  which could be found under `%APPDATA%\Anki2`
+            if not mw.col.media.have(std_name):
+                mw.col.media.addFile(std_img)
+                new_img_count += 1
+                logger.debug(f'Media-Import: add img success, img filename "{std_name}"')
+            else:
+                logger.debug(f'Media-Import: img already imported, skip. img filename "{std_name}"')
+            # delete copied file
+            os.remove(std_img)
+        # return
+        return new_img_count
+
     def comment_noteid(self, note_heading: Tag, note_id: NoteId) -> str:
         ...
 
     def get_commented_noteid(self, note_heading: Tag) -> NoteId:
-        ...
-
-    def do_media_import(self, soup: BeautifulSoup) -> int:
-        """
-        Import media file to Anki collection (media folder).
-        :param soup: BeautifulSoup object of note scope
-        :return: How many media files imported
-        """
         ...
 
     """ ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
