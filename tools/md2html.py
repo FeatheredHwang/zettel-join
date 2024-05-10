@@ -1,5 +1,5 @@
 """
-Transfer markdown files to html for parse convenience,
+Transfer markdown files to html for test convenience,
 """
 import os
 import pathlib
@@ -20,9 +20,6 @@ load_dotenv('../zettel_join/test/.env')
 
 
 def transfer_md_to_html():
-    """
-    Transfer markdown files to html for parse convenience
-    """
     # using os module to get environment variables
     test_kasten_path = os.getenv('TEST_KASTEN_PATH')
     project_path = os.getenv('PROJECT_PATH')
@@ -54,7 +51,7 @@ def transfer_md_to_html():
     extensions.append(table_ext)
 
     # render the files
-    print(ex_dst_path)
+    print('Example MD files will be copied to: ' + ex_dst_path.__str__())
     for root, dirs, files in os.walk(ex_dst_path):
         files = [f for f in files if not f.startswith('.') and f.endswith('.md')]
         for file in files:
