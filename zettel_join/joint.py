@@ -38,6 +38,10 @@ class FileId(int):
 
 
 class Joint:
+    """
+    A joint is a model with join() function which import notes from ZK note files.
+    """
+
     model_name: str
     new_notes_count: int
 
@@ -128,6 +132,9 @@ class ClozeJoint(MdJoint):
     zk: ZettelKasten = None
     model: Model = None
     model_name: str = 'ZK cloze'
+
+    # temp
+    handling_content: str
 
     """
     Initialize
@@ -232,11 +239,11 @@ class ClozeJoint(MdJoint):
 
     FILE_TYPE = '.md'
 
-    def join_file(self, abs_file: str, deck_id: DeckId) -> int:
+    def join_file(self, abs_file: str, deck_name: str) -> int:
         """
         Join MD file.
         :param abs_file: The absolute path of the file to join
-        :param deck_id: The ID of the deck where the MD file is joined to
+        :param deck_name: The name of the deck where the MD file is joined to
         """
         logger.debug(f'File-join: Handling with "{os.path.basename(abs_file)}"')
         post = self.load(abs_file)
@@ -247,17 +254,21 @@ class ClozeJoint(MdJoint):
         # join MD note
         post.content = self.do_standardize(post.content)
         soup: BeautifulSoup = self.make_soup(post.content)
+        # temp
+        self.handling_content = post.content
         new_notes_count: int = 0
         # Traverse headings
         for heading in soup.find_all(self.HEADING_TAG_NAMES):
-            if self.join_note(heading, deck_id):
+            if self.join_note(heading, deck_name):
                 new_notes_count += 1
         logger.info(f'File-join: Done, with {new_notes_count} notes joined.')
         # Finally, comment the source file if new-notes imported
         file_id = ...
         if new_notes_count > 0:
             self.comment_fileid(abs_file, file_id)
-            self.dump(abs_file, post)
+            # temp
+            post.content = self.handling_content
+            self.dump(post, abs_file)
         return new_notes_count
 
     def check_joinable(self, post: frontmatter.Post) -> bool:
@@ -393,7 +404,7 @@ class ClozeJoint(MdJoint):
         # add note to deck, and the note object will get assigned with id
         deck_id: DeckId = mw.col.decks.id(deck_name)  # find deck or create if not exist
         mw.col.add_note(note, deck_id)
-        self.comment_noteid(note_heading, note.id)
+        self.add_noteid_comment(note_heading, note.id)
         logger.info(f'Note-Join: Done, {new_cloze_count} cloze-deletions made, note.id: {note.id}')
         return new_cloze_count
 
@@ -460,11 +471,13 @@ class ClozeJoint(MdJoint):
             logger.warning(f'Note-join: blockquote tags decomposed (without included in "Extra" field)')
         return note_scope
 
-    def do_media_import(self, soup: BeautifulSoup, deck_name: str) -> int:
+    @staticmethod
+    def do_media_import(soup: BeautifulSoup, deck_name: str) -> int:
         """
         Import media file to Anki collection (media folder).
         For now, only image media supported.
         :param soup: the BeautifulSoup that contains img tags
+        :param deck_name: The name of the deck where the MD file is joined to
         :return: How many media files imported
         """
         # Since folders inside the media folder are not supported,
@@ -488,7 +501,7 @@ class ClozeJoint(MdJoint):
                 continue
             img_name = os.path.basename(img)
             # create a copy with standardized name
-            std_name = '.'.join(self.aimed_deck.split(sep='::') + [img_name])
+            std_name = '.'.join(deck_name.split(sep='::') + [img_name])
             std_img = os.path.join(os.path.dirname(img), std_name)
             shutil.copyfile(img, std_img)
             # modify 'src' attribute of <img> tag
@@ -506,11 +519,43 @@ class ClozeJoint(MdJoint):
         # return
         return new_img_count
 
-    def comment_noteid(self, note_heading: Tag, note_id: NoteId) -> str:
-        ...
+    def add_noteid_comment(self, note_heading: Tag, note_id: NoteId):
+        """
+        Add comment with NoteId after the heading line
+        :param note_heading:
+        :param note_id:
+        :return:
+        """
+        re.sub(
+            r'(\n*#+\s*{}\s*\n\n)'.format(note_heading.text),
+            r'\1' + f'<!-- NoteId: {note_id} -->\n\n',
+            self.handling_content)
+        # there must be two '\n' at the end of the pattern,
+        #  or the comment will be parsed as part of next element in markdown2
+        logger.debug(f'Importing MD - NoteId commented after heading "{note_heading.text}".')
 
-    def get_commented_noteid(self, note_heading: Tag) -> NoteId:
-        ...
+    @staticmethod
+    def get_commented_noteid(note_heading: Tag) -> NoteId:
+        """
+        Get the noteid from the comment right after the heading tag
+        :param note_heading:
+        :return:
+        """
+        comm = note_heading.next_sibling
+        while comm and isinstance(comm, NavigableString):
+            if isinstance(comm, Comment):
+                break
+            else:
+                comm = comm.next_sibling
+        else:
+            return NoteId(0)
+        m = re.fullmatch(
+            r'\s*NoteId:\s*(?P<note_id>[0-9]{13})\s*',
+            comm,
+            flags=re.IGNORECASE
+        )
+        note_id = NoteId(m.group('note_id')) if m else None
+        return note_id
 
     """ ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
     cloze-level
