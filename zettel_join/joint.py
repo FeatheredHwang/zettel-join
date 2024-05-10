@@ -86,9 +86,9 @@ class MdJoint(Joint):
     @staticmethod
     def read(file: str) -> str:
         """
-        Open the file and read the file content.
+        Open the file and read the text content.
         :param file: The path of the file to read from.
-        :return: The content of the file.
+        :return: The text content of the file.
         """
         try:
             with open(file, 'r', encoding='utf-8') as f:
@@ -107,12 +107,21 @@ class MdJoint(Joint):
         return post
 
     @staticmethod
-    def write():
-        ...
+    def write(content: str, file: str):
+        """
+        Write text content to a file.
+        :param content: The text content waiting to write to the file.
+        :param file: The path of the file to write to.
+        """
+        try:
+            with open(file, 'w', encoding='utf-8') as f:
+                f.write(content)
+            logger.debug(f'File-write done: "{file}"')
+        except Exception as e:
+            logger.error(f'File-write error: "{file}" {e}')
 
-    @staticmethod
-    def dump(file: str, post: frontmatter.Post):
-        frontmatter.dump(post, file)
+    def dump(self, post: frontmatter.Post, file: str):
+        self.write(frontmatter.dumps(post), self.read(file))
 
 
 class ClozeJoint(MdJoint):
