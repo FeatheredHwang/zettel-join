@@ -25,6 +25,10 @@ markdown
 # Documentation: https://facelessuser.github.io/pymdown-extensions/
 pymdown-extensions
 
+# Convert some HTML to Markdown
+# Documentation: https://github.com/matthewwithanm/python-markdownify/blob/develop/README.rst
+markdownify
+
 # emojis module allows emojifying content such as: `it's raining :cat:s and :dog:s!`
 #   whose database is based on gemoji library.
 emojis

@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 
 import bs4
 import markdownify
-from markdownify import MarkdownConverter
 
 # load variables from .env file
 load_dotenv('../zettel_join/test/.env')
@@ -26,9 +25,7 @@ def transfer_html_to_md():
                 # Read the entire content of the file
                 html_content = html_file.read()
                 print(f"File <{os.path.join(root, file)}> read successfully")
-            # md_content = markdownify.markdownify(html_content, heading_style="ATX")
-            soup = bs4.BeautifulSoup(html_content, 'html.parser')
-            md_content = MarkdownConverter(heading_style="ATX").convert_soup(soup)
+            md_content = markdownify.markdownify(html_content, heading_style="ATX")
             with open(os.path.join(root, file + '.md'), 'w', encoding='utf-8') as md_file:
                 md_file.write(md_content)
                 print(f"File <{os.path.join(root, file + '.html')}> write successfully")
