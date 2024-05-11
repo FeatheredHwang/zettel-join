@@ -51,7 +51,7 @@ def transfer_md_to_html():
     extensions.append(table_ext)
 
     # render the files
-    print('Example MD files will be copied to: ' + ex_dst_path.__str__())
+    print('Example MD files has been copied to: ' + ex_dst_path.__str__())
     for root, dirs, files in os.walk(ex_dst_path):
         files = [f for f in files if not f.startswith('.') and f.endswith('.md')]
         for file in files:
