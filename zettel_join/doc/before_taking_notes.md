@@ -1,3 +1,4 @@
+What you need to know before writing notes to ZK :
 # Rules of Formulating Knowledge
 
 ## Avoid sets

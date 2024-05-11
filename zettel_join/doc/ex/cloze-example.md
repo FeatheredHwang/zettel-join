@@ -17,7 +17,7 @@ After join/importation, a **comment** with Note Id will be inserted after the he
 
 ## Field Map
 
-- Headings will be joined together, from h1 to h\[1-6\], as 'root' field. 
+- Headings will be joined together, from h1 to h6, as 'root' field. 
 - Content under the heading (except blockquotes) will map to 'Text' field, where cloze-deletion happens.
 - Blockquotes under the heading will map to 'Extra' field.
 
@@ -35,9 +35,11 @@ The most concerned question is, how the addon recognize cloze deletions. The add
 > [!WARNING] 
 >
 > ZK-join *won't* accept nested cloze-deletion. For example, if you write MD like:
+> 
 > ```
 > 1. **strong** word inside a list item
 > ```
+> 
 > the `strong` word will be a cloze-deletion, while the list item not.
 
 ### Strong and emphasis(italic) words

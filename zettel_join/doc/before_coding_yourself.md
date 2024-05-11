@@ -1,6 +1,20 @@
-# Mistakes I've made
+# What you need to know before code yourself
 
-## mw is None before profile-loaded
+## Joint Workflow
+
+...
+
+```mermaid
+graph TB
+A[Hard edge] -->B(Round edge)
+B --> C{Decision}
+C -->|One| D[Result one]
+C -->|Two| E[Result two]
+```
+
+## Mistakes I've made
+
+### mw is None before profile-loaded
 
 Error Example
 ```python
@@ -13,7 +27,7 @@ this will return:
 AttributeError: 'NoneType' object has no attribute 'models'
 ```
 
-## To connect the function to QAction
+### To connect the function to QAction
 
 ```python
 from KBjoint import *
@@ -25,7 +39,7 @@ action.triggered.connect(kb_join())
 action.triggered.connect(kb_join)
 ```
 
-## Union type hints
+### Union type hints
 
 For now, Anki uses Python 3.9 writing union types as `X | Y` allowed in Python 3.10 and later versions.
 
@@ -39,7 +53,7 @@ def open_dir() -> Union[str, None]:
   pass
 ```
 
-## `<script>` tag get deleted in HTML editor of fields
+### `<script>` tag get deleted in HTML editor of fields
 
 `<style>` and `<script>` tag get deleted as soon as the focus leave HTML editor of fields:
 
@@ -47,7 +61,7 @@ As Anki want to provide better card preloading in the future (preload next card 
 
 In this case, when I use `mdx_math` (python-markdown-math) or `pymdownx.arithmatex` (pymdown-extensions) to parse math, their returned **MathJax-style math** `<script type="math/tex; mode=display">...</script>` will get deleted.
 
-## How to use `python-markdown` extensions
+### How to use `python-markdown` extensions
 
 The Python-Markdown documentation explains how to use extensions:
 
@@ -59,7 +73,7 @@ The Python-Markdown documentation explains how to use extensions:
 > Strings should only be used when it is **impossible**
 > to import the Extension Class directly (from the command line or in a template).
 
-## How to write math in markdown
+### How to write math in markdown
 
 This Anki addon uses `python-markdown` to render the md file,
 with `pymdownx.arithmatex` to render math. The way how we 
