@@ -165,8 +165,9 @@ class MarkdownConverter(object):
         # Convert the children first
         for el in node.children:
             # My edit
-            if isinstance(el, Comment) or isinstance(el, Doctype):
-            # if isinstance(el, Doctype):
+            if isinstance(el, Comment):
+                text += self.process_comment(el)
+            elif isinstance(el, Doctype):
                 continue
             elif isinstance(el, NavigableString):
                 text += self.process_text(el)
@@ -178,6 +179,10 @@ class MarkdownConverter(object):
             if convert_fn and self.should_convert_tag(node.name):
                 text = convert_fn(node, text, convert_as_inline)
 
+        return text
+
+    def process_comment(self, el):
+        text = '<!-- %s -->' % el
         return text
 
     def process_text(self, el):
