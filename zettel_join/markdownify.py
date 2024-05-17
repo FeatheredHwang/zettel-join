@@ -1,3 +1,6 @@
+# This module is based on python-markdownify, licensed with MIT.
+# source code: https://github.com/matthewwithanm/python-markdownify
+
 # The MIT License (MIT)
 #
 # Copyright 2024 Feathered Hwang
@@ -21,11 +24,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-"""
-This module is based on python-markdownify, which licensed with MIT License shown above.
-source code: https://github.com/matthewwithanm/python-markdownify
-"""
-
+""" transfer html to markdown """
 
 from bs4 import BeautifulSoup, NavigableString, Comment, Doctype
 from textwrap import fill
@@ -182,7 +181,9 @@ class MarkdownConverter(object):
         return text
 
     def process_comment(self, el):
-        text = '<!-- %s -->' % el
+        text = '<!--%s-->' % el
+        if type(el.parent) is BeautifulSoup or el.parent.name == 'html':
+            text += '\n\n'
         return text
 
     def process_text(self, el):
@@ -204,6 +205,8 @@ class MarkdownConverter(object):
                      or el.next_sibling.name in ['ul', 'ol'])):
             text = text.rstrip()
 
+        if text.startswith('\n'):
+            text = text[1:]
         return text
 
     def __getattr__(self, attr):
@@ -273,7 +276,7 @@ class MarkdownConverter(object):
         if convert_as_inline:
             return text
 
-        return '\n' + (line_beginning_re.sub('> ', text.strip()) + '\n\n') if text else ''
+        return (line_beginning_re.sub('> ', text.strip()) + '\n\n') if text else ''
 
     def convert_br(self, el, text, convert_as_inline):
         if convert_as_inline:
@@ -311,7 +314,7 @@ class MarkdownConverter(object):
         return '%s %s\n\n' % (hashes, text)
 
     def convert_hr(self, el, text, convert_as_inline):
-        return '\n\n---\n\n'
+        return '---\n\n'
 
     convert_i = convert_em
 
@@ -403,7 +406,7 @@ class MarkdownConverter(object):
     convert_sup = abstract_inline_conversion(lambda self: self.options['sup_symbol'])
 
     def convert_table(self, el, text, convert_as_inline):
-        return '\n\n' + text + '\n'
+        return text + '\n'
 
     def convert_caption(self, el, text, convert_as_inline):
         return text + '\n'
