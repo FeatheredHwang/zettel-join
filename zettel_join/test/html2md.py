@@ -2,13 +2,18 @@
 Transfer html files to markdown for test convenience,
 """
 import os
+import sys
 from dotenv import load_dotenv
 
-import bs4
-import markdownify
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    import markdownify
+except ImportError as e:
+    print(f'Module "markdownify" import error: {e}')
+    sys.exit()
 
 # load variables from .env file
-load_dotenv('../zettel_join/test/.env')
+load_dotenv('.env')
 
 
 def transfer_html_to_md():
@@ -25,10 +30,10 @@ def transfer_html_to_md():
                 # Read the entire content of the file
                 html_content = html_file.read()
                 print(f"File <{os.path.join(root, file)}> read successfully")
-            md_content = markdownify.markdownify(html_content, heading_style="ATX")
+            md_content = markdownify.markdownify(html_content, heading_style="ATX", bullets='---')
             with open(os.path.join(root, file + '.md'), 'w', encoding='utf-8') as md_file:
                 md_file.write(md_content)
-                print(f"File <{os.path.join(root, file + '.html')}> write successfully")
+                print(f"File <{os.path.join(root, file + '.md')}> write successfully")
 
 
 if __name__ == '__main__':
