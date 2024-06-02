@@ -37,6 +37,8 @@ line_beginning_re = re.compile(r'^', re.MULTILINE)
 whitespace_re = re.compile(r'[\t ]+')
 all_whitespace_re = re.compile(r'[\s]+')
 html_heading_re = re.compile(r'h[1-6]')
+math_block_wrap = re.compile(r'\\[\[\]]')
+math_inline_wrap = re.compile(r'\\[\(\)]')
 
 
 # Heading styles
@@ -87,6 +89,7 @@ def _todict(obj):
     return dict((k, getattr(obj, k)) for k in dir(obj) if not k.startswith('_'))
 
 
+# noinspection PyMethodMayBeStatic
 class MarkdownConverter(object):
     class DefaultOptions:
         autolinks = True
@@ -111,7 +114,7 @@ class MarkdownConverter(object):
         pass
 
     def __init__(self, **options):
-        # Create an options dictionary. Use DefaultOptions as a base so that
+        # Create an options-dictionary. Use DefaultOptions as a base so that
         # it doesn't have to be extended.
         self.options = _todict(self.DefaultOptions)
         self.options.update(_todict(self.Options))
@@ -130,7 +133,7 @@ class MarkdownConverter(object):
     def process_tag(self, node, convert_as_inline, children_only=False):
         text = ''
 
-        # markdown headings or cells can't include
+        # Markdown headings or cells can't include
         # block elements (elements w/newlines)
         isHeading = html_heading_re.match(node.name) is not None
         isCell = node.name in ['td', 'th']
@@ -151,7 +154,7 @@ class MarkdownConverter(object):
                 # conditions is true:
                 # - el is the first element in its parent
                 # - el is the last element in its parent
-                # - el is adjacent to an nested node
+                # - el is adjacent to a nested node
                 can_extract = (not el.previous_sibling
                                or not el.next_sibling
                                or is_nested_node(el.previous_sibling)
@@ -295,6 +298,13 @@ class MarkdownConverter(object):
 
     convert_del = abstract_inline_conversion(lambda self: '~~')
 
+    def convert_div(self, el, text, convert_as_inline):
+        if el.has_attr('class') and 'arithmatex' in el.attrs['class']:
+            text, number_of_subs_made = math_block_wrap.subn('$$', text)
+            if not number_of_subs_made:
+                text = '$$ \n' + text + '$$ \n\n'
+        return text
+
     convert_em = abstract_inline_conversion(lambda self: self.options['strong_em_symbol'])
 
     convert_kbd = convert_code
@@ -391,6 +401,13 @@ class MarkdownConverter(object):
 
     def convert_script(self, el, text, convert_as_inline):
         return ''
+
+    def convert_span(self, el, text, convert_as_inline):
+        if el.has_attr('class') and 'arithmatex' in el.attrs['class']:
+            text, number_of_subs_made = math_inline_wrap.subn('$', text)
+            if not number_of_subs_made:
+                text = ' $ ' + text + ' $ '
+        return text
 
     def convert_style(self, el, text, convert_as_inline):
         return ''
