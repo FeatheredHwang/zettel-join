@@ -603,9 +603,8 @@ class ClozeJoint(MdJoint):
             return False
         cloze_tag.string = '{{c' + str(cloze_no) + ':: ' + cloze_tag.string + '}}'
         # add math wrap manually
-        if cloze_tag.has_attr('class') and cloze_tag.attrs['class'] == 'arithmatex':
-            cloze_tag.contents[0].insert_before('\\[')
-            cloze_tag.contents[-1].insert_after('\\]')
+        if cloze_tag.has_attr('class') and 'arithmatex' in cloze_tag.attrs['class']:
+            cloze_tag.string = '\\[ ' + cloze_tag.string + ' \\]'
         return True
 
 
